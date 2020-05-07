@@ -17,6 +17,15 @@ const warm = [
     [96, 247, 97],  [115, 246, 91], [134, 245, 88], [155, 243, 88]
   ];
 
+  const warmColors = [
+    [110, 64, 170], [106, 72, 183], [100, 81, 196], [92, 91, 206],
+    [84, 101, 214], [75, 113, 221], [66, 125, 224], [56, 138, 226],
+    [48, 150, 224], [40, 163, 220], [33, 176, 214], [29, 188, 205],
+    [26, 199, 194], [26, 210, 182], [28, 219, 169], [33, 227, 155],
+    [41, 234, 141], [51, 240, 128], [64, 243, 116], [79, 246, 105],
+    [96, 247, 97],  [115, 246, 91], [134, 245, 88], [155, 243, 88]
+  ];
+
 // check if metadata is ready - we need the sourceVideo size
 sourceVideo.onloadedmetadata = () => {
     console.log("video metadata ready");
@@ -69,7 +78,9 @@ async function loop(net) {
             internalResolution: 'high',
             segmentationThreshold: 0.5,         // default is 0.7
         };
-        const segmentation = await net.segmentPersonParts(sourceVideo, segmentPersonConfig);
+        const segmentation = await net.segmentPerson(sourceVideo, segmentPersonConfig);
+        // use code below to segment by parts
+        //const segmentation = await net.segmentPersonParts(sourceVideo, segmentPersonConfig);
 
         const numPixels = segmentation.width * segmentation.height;
 
@@ -97,12 +108,15 @@ function draw(personSegmentation) {
     let targetSegmentation = personSegmentation;
 
     // Draw a mask of the body segments - useful for debugging
-    const coloredPartImage = bodyPix.toColoredPartMask(targetSegmentation, warm);
+    const foregroundColor = {r: 0, g: 255, b: 0, a: 100};
+    const backgroundColor = {r: 0, g: 0, b: 0, a: 0};
+    const coloredImage = bodyPix.toMask(targetSegmentation, foregroundColor, backgroundColor);
+    // const coloredImage = bodyPix.toColoredPartMask(targetSegmentation, warm);
     const opacity = 0.5;
     const maskBlurAmount = 0;
     // change the second drawcanvas to sourceVideo to overlay on video stream
     bodyPix.drawMask(
-        drawCanvas, drawCanvas, coloredPartImage, opacity, maskBlurAmount,
+        drawCanvas, drawCanvas, coloredImage, opacity, maskBlurAmount,
         flipHorizontal);
 
     // }
@@ -143,7 +157,7 @@ function drawKeypoints(keypoints, minConfidence, ctx, color = 'aqua') {
     }
 }
 
-// Helper function to convert an arrow into a matrix for easier pixel proximity functions
+// Helper function to convert an array into a matrix for easier pixel proximity functions
 function arrayToMatrix(arr, rowLength) {
     let newArray = [];
 
