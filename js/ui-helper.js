@@ -1,18 +1,8 @@
 // element selectors
 const sourceVideo = document.querySelector('video');
-const drawCanvas = document.querySelector('canvas');
-
-// Stats panel
-const userMessage = document.querySelector('#userMessage');
-const showStats = document.querySelector('#statsDiv');
-
-const fpsDisplay = document.querySelector('#fps');
-
-
-// controls
-const showMaskToggle = document.querySelector('#showMask');
-const showPointsToggle = document.querySelector('#showPoints');
-const resetButton = document.querySelector('button#reset');
+const drawCanvas = document.querySelector('#drawCanvas');
+const streamCanvas = document.querySelector('#streamCanvas');
+const streamImg = document.querySelector('#streamImg');
 
 // Model control buttons
 // const fastButton = document.querySelector('button#highSpeed');
@@ -58,48 +48,3 @@ function enableDashboard(initial=false) {
 
     firstRun = false;
 }
-
-
-// Update stats
-
-// let lastFrameTime = new Date().getTime();
-
-// let startTime;
-
-// Adjust BodyPix model settings
-
-// fastButton.addEventListener('click', e => {
-//     fastButton.disabled = true;
-//     normalButton.disabled = false;
-//     slowerButton.disabled = false;
-//     slowButton.disabled = false;
-//     stopLoop = true;
-//     load(0.5, 16);
-// });
-
-// normalButton.addEventListener('click', e => {
-//     fastButton.disabled = false;
-//     normalButton.disabled = true;
-//     slowerButton.disabled = false;
-//     slowButton.disabled = false;
-//     stopLoop = true;
-//     load(0.75, 16);
-// });
-
-// slowerButton.addEventListener('click', e => {
-//     fastButton.disabled = false;
-//     normalButton.disabled = false;
-//     slowerButton.disabled = true;
-//     slowButton.disabled = false;
-//     stopLoop = true;
-//     load(.75, 8);
-// });
-
-// slowButton.addEventListener('click', e => {
-//     fastButton.disabled = false;
-//     normalButton.disabled = false;
-//     slowerButton.disabled = false;
-//     slowButton.disabled = true;
-//     stopLoop = true;
-//     load(1, 8);
-// });

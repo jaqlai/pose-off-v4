@@ -1,0 +1,25 @@
+video {
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: -1;
+    /* Mirror the local sourceVideo */
+    transform: scale(-1, 1);            /*For Firefox (& IE) */
+    -webkit-transform: scale(-1, 1);     /*for Chrome & Opera (& Safari) */
+    height: 480px;
+    width: 640px;
+}
+canvas{
+    display: none;
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index:0
+}
+
+img {
+    position: absolute;
+    left: 0px;
+    top: 0px;
+    z-index: -1;
+  }

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <title>Pose Off!</title>
-    <link rel="stylesheet" type="text/css" href="style.css">
+    <link rel="stylesheet" type="text/css" href="/css/style.css">
     <!-- Load TensorFlow.js -->
     <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@1.2"></script>
     <!-- Load BodyPix -->
@@ -12,58 +12,21 @@
 
 <body>
 <div id="main">
-    <canvas id = "myCanvas"></canvas>
+    <img id="streamImg">
+    <canvas id = "streamCanvas"></canvas>
+    <canvas id = "diffCanvas"></canvas>
+    <canvas id = "drawCanvas"></canvas>
     <div id="vidContainer" style="display:none">
     <video id="myVid" autoplay playsinline style="display:none"></video>
 </div>
-    <!-- <div id="content">
-        <h1>Face Touch Monitor</h1>
-        <h4>See how often you touch your face and learn to stop! </h4>
-        <p>
-            In addition to washing your hands often,
-            the <a href="https://www.cdc.gov/coronavirus/2019-ncov/prepare/prevention.html">CDC</a> recommends that you
-            avoid touching your eyes, nose, and mouth with unwashed hands. This can be hard to do without a reminder.
-        </p>
-        <p>
-            This page uses your webcam and computer vision to count when you touch your face.
-            Set beep alerts or get a browser notification when you do.
-            The reminders can you train yourself to stop accidental face touching.
-            Just keep this page running in the background as you use your computer.
-        </p>
-        <p>
-            Machine learning on your image is done 100% locally in your browser.
-            No information is shared externally.
-        </p>
-        <p>Click anywhere to get started.</p>
-        <button id="start">Start monitoring</button>
-        <div id="usageNoteMain">
-        <h4>Usage notes</h4>
-        <p> This is a quick hack that we'll improve.
-            Keep this tab in the foreground for the best performance.
-            It has no depth perception, so a hand in front of your face will set it off.
-            This works best on Chrome and has been tested in the new Edge and Firefox.
-            I haven't been able to make it work with Safari yet.
-            It usually does not detect as well if you are very close to the camera.
-            It will not work well on slower devices or mobile.</p>
-        </div>
-    </div> -->
+
 </div>
 <div id="dashboard">
-    <h3>Statistics</h3>
     <p>Status: <span id="userMessage">Click to the left to activate your webcam.</span></p>
     <div id="statsDiv" hidden>
         <p>FPS: <span id="fps"></span></p>
     </div>
-    <h3>Controls</h3>
     <div id="controls">
-        <label for="alertTimeOut">Time between alerts (s)</label>
-        <input type="text" size=4 id="alertTimeOut" name="alertTimeOut" value="5"><br>
-
-        <input type="checkbox" id="showMask" name="showMask" value="showMask" checked>
-        <label for="showMask">Display the segmentation mask</label><br>
-
-        <input type="checkbox" id="showPoints" name="showPoints" value="showPoints">
-        <label for="showPoints">Display detection points</label><br>
 
         <!-- <p>Trade off speed for accuracy:</p>
         <button id="highSpeed" disabled>Faster</button>
@@ -76,39 +39,67 @@
 </div>
 
 <!-- messages stuff-->
-<ul id="messages"></ul>
+<!-- <ul id="messages"></ul>
 <form action="">
     <input id="m" autocomplete="off" /><button>Send</button>
-</form>
+</form> -->
 
 
 <!-- include socket and jquery -->
 <script src="/socket.io/socket.io.js"></script>
 <script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
+<script src="https://bundle.run/pixelmatch@5.0.1"></script>
 
 <!-- socket stuff -->
 <script>
-
+var thisRoom;
+var socket = io();
 $(function () {
-    var socket = io();
     if (location.hash) {
-        socket.emit('room hash', location.hash);
+        //should this convert so that it will still work if the hash is messed with?
+        thisRoom = location.hash;
+        socket.emit('room-hash', thisRoom);
+        
         //document.getElementById("room-display").innerHTML = "Current Room: "+location.hash;
     };
-    $('form').submit(function(e){
-        e.preventDefault(); // prevents page reloading
-        socket.emit('chat message', $('#m').val());
-        $('#m').val('');
-        return false;
+
+    // $('form').submit(function(e){
+    //     e.preventDefault(); // prevents page reloading
+    //     socket.emit('chat message', $('#m').val());
+    //     $('#m').val('');
+    //     return false;
+    // });
+    // socket.on('chat message', function(msg){
+    //      $('#messages').append($('<li>').text(msg));
+    // });
+
+    socket.on('seg-stream', (data) => {
+        $('#streamImg').attr('src',data);
+        // //console.log("wooho");
+        // var canvas = document.getElementById("streamImg");
+        // var ctx = canvas.getContext("2d");
+        // //console.log(ctx);
+        // ctx = data;
+        // console.log("hahah");
     });
-    socket.on('chat message', function(msg){
-        $('#messages').append($('<li>').text(msg));
-    });
+
+    
+    function foo() {
+
+    // your function code here
+    socket.emit('run-match', drawCanvas.toDataURL('image/webp'));
+        console.log("new iteration");
+
+    setTimeout(foo, 3000);
+    }
+
+    foo();
 });
 </script>
 
 <script src="/js/ui-helper.js"></script>
-<script src="/js/detect.js"></script>
+<script src="/js/scan.js"></script>
+
 <!-- <script src="/js/output.js"></script> -->
 
 </body>

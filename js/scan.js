@@ -1,5 +1,6 @@
 // Canvas setup
 const drawCtx = drawCanvas.getContext('2d');
+const streamCtx = streamCanvas.getContext('2d');
 
 // Global flags
 const flipHorizontal = true;
@@ -79,13 +80,11 @@ async function loop(net) {
             segmentationThreshold: 0.5,         // default is 0.7
         };
         const segmentation = await net.segmentPerson(sourceVideo, segmentPersonConfig);
-        // use code below to segment by parts
-        //const segmentation = await net.segmentPersonParts(sourceVideo, segmentPersonConfig);
 
-        const numPixels = segmentation.width * segmentation.height;
+        // use this code to segment by parts (also have to change coloredImage below)
+        // const segmentation = await net.segmentPersonParts(sourceVideo, segmentPersonConfig);
 
-
-        // skip if noting is there
+        // skip if nothing is there
         if (segmentation.allPoses[0] === undefined) {
             // console.info("No segmentation data");
             continue;
@@ -93,7 +92,10 @@ async function loop(net) {
 
         // Draw the data to canvas
         draw(segmentation);
-
+        // socket.emit('seg-stream',segmentation);
+        // might have to have a png option for non-chrome?
+        socket.emit('seg-stream', drawCanvas.toDataURL('image/webp'));
+        //socket.emit('chat message', "huzzah, dude!");
 
     }
 
@@ -107,10 +109,10 @@ function draw(personSegmentation) {
     // if (showMaskToggle.checked) {
     let targetSegmentation = personSegmentation;
 
-    // Draw a mask of the body segments - useful for debugging
     const foregroundColor = {r: 0, g: 255, b: 0, a: 100};
     const backgroundColor = {r: 0, g: 0, b: 0, a: 0};
     const coloredImage = bodyPix.toMask(targetSegmentation, foregroundColor, backgroundColor);
+  
     // const coloredImage = bodyPix.toColoredPartMask(targetSegmentation, warm);
     const opacity = 0.5;
     const maskBlurAmount = 0;
@@ -174,3 +176,28 @@ function arrayToMatrix(arr, rowLength) {
     }
     return newArray;
 }
+
+socket.on('match', () => {
+    const w = drawCanvas.width;
+    const h = drawCanvas.height;
+    const myImg = drawCtx.getImageData(0, 0, w, h);
+    
+    streamCtx.drawImage(streamImg, streamImg.height, streamImg.width);
+    const poseFrame = streamCtx.getImageData(0, 0, w, h);
+    // console.log(myImg);
+    
+
+    const diffCanvas = document.querySelector('#diffCanvas');
+    const diffContext = diffCanvas.getContext('2d');
+
+    const diff = diffContext.createImageData(w, h);
+
+    dPix = pixelmatch(myImg.data, poseFrame.data, diff.data, w, h, {threshold: 0.1});
+
+    ptg = dPix/(w*h);
+
+    console.log("pct diff:"+ptg);
+    // console.log("waaaa");
+
+    // diffContext.putImageData(diff, 0, 0);
+});
