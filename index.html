@@ -75,14 +75,41 @@
     </div>
 </div>
 
-<script src="ui-helper.js"></script>
-<script src="detect.js"></script>
-<script src="output.js"></script>
+<!-- messages stuff-->
+<ul id="messages"></ul>
+<form action="">
+    <input id="m" autocomplete="off" /><button>Send</button>
+</form>
 
-<!-- If this is popular I will put more effort into it -->
-<!-- <script src="/__/firebase/7.11.0/firebase-app.js"></script>
-<script src="/__/firebase/7.11.0/firebase-analytics.js"></script>
-<script src="/__/firebase/init.js"></script>
-<script>firebase.analytics();</script> -->
+
+<!-- include socket and jquery -->
+<script src="/socket.io/socket.io.js"></script>
+<script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
+
+<!-- socket stuff -->
+<script>
+
+$(function () {
+    var socket = io();
+    if (location.hash) {
+        socket.emit('room hash', location.hash);
+        //document.getElementById("room-display").innerHTML = "Current Room: "+location.hash;
+    };
+    $('form').submit(function(e){
+        e.preventDefault(); // prevents page reloading
+        socket.emit('chat message', $('#m').val());
+        $('#m').val('');
+        return false;
+    });
+    socket.on('chat message', function(msg){
+        $('#messages').append($('<li>').text(msg));
+    });
+});
+</script>
+
+<script src="/js/ui-helper.js"></script>
+<script src="/js/detect.js"></script>
+<!-- <script src="/js/output.js"></script> -->
+
 </body>
 </html>
