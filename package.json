@@ -18,13 +18,12 @@
     "url": "git+https://github.com/jaqlai/pose-off-v4.git"
   },
   "author": "",
-  "license": "ISC",
+  "license": "MIT",
   "bugs": {
     "url": "https://github.com/jaqlai/pose-off-v4/issues"
   },
-  "homepage": "https://github.com/jaqlai/pose-off-v4#readme"
-,
+  "homepage": "https://github.com/jaqlai/pose-off-v4#readme",
   "engines": {
-    "node": "10.x"
+    "node": "^10.x"
   }
 }
