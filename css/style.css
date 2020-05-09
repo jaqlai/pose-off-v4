@@ -8,8 +8,6 @@ video {
     -webkit-transform: scale(-1, 1);     /*for Chrome & Opera (& Safari) */
     /* height: 480px;
     width: 640px; */
-    height: 720px;
-    width: 1280px;
 }
 canvas{
     display: none;

@@ -17,7 +17,7 @@
     <canvas id = "diffCanvas"></canvas>
     <canvas id = "drawCanvas"></canvas>
     <div id="vidContainer" style="display:none">
-    <video id="myVid" autoplay playsinline style="display:none" width="1280" height = "720"></video>
+    <video id="myVid" autoplay playsinline style="display:none"></video>
 </div>
 
 </div>
@@ -83,14 +83,11 @@ $(function () {
         // console.log("hahah");
     });
 
-    
+// compare the two images
     function foo() {
-
-    // your function code here
     socket.emit('run-match', drawCanvas.toDataURL('image/webp'));
-        console.log("new iteration");
-
-    setTimeout(foo, 3000);
+    // console.log("lmfao");
+    setTimeout(foo, 100);
     }
 
     foo();

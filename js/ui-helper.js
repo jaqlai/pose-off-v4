@@ -2,7 +2,6 @@
 const sourceVideo = document.querySelector('video');
 const drawCanvas = document.querySelector('#drawCanvas');
 const streamCanvas = document.querySelector('#streamCanvas');
-const streamImg = document.querySelector('#streamImg');
 
 // Model control buttons
 // const fastButton = document.querySelector('button#highSpeed');

@@ -54,7 +54,14 @@ function load(multiplier=0.75, stride=8) {
     drawCanvas.width = sourceVideo.videoWidth;
     drawCanvas.height = sourceVideo.videoHeight;
 
-    userMessage.innerText = "Waiting for Machine Learning model to load...";
+    // console.log("video width: "+sourceVideo.width);
+    // console.log("video height: "+sourceVideo.height);
+
+    // drawCanvas.width = sourceVideo.width;
+    // drawCanvas.height = sourceVideo.height;
+
+
+    userMessage.innerText = "Loading model...";
 
     console.log(`loading BodyPix with multiplier ${multiplier} and stride ${stride}`);
 
@@ -92,10 +99,9 @@ async function loop(net) {
 
         // Draw the data to canvas
         draw(segmentation);
-        // socket.emit('seg-stream',segmentation);
+
         // might have to have a png option for non-chrome?
         socket.emit('seg-stream', drawCanvas.toDataURL('image/webp'));
-        //socket.emit('chat message', "huzzah, dude!");
 
     }
 
@@ -177,27 +183,51 @@ function arrayToMatrix(arr, rowLength) {
     return newArray;
 }
 
+// run a comparison of the two canvases
 socket.on('match', () => {
+    console.log("matching ...");
     const w = drawCanvas.width;
     const h = drawCanvas.height;
+    streamCanvas.width = w;
+    streamCanvas.height = h;
     const myImg = drawCtx.getImageData(0, 0, w, h);
-    
-    streamCtx.drawImage(streamImg, streamImg.height, streamImg.width);
+
+    let streamImg = document.getElementById('streamImg');
+    streamCtx.drawImage(streamImg, 0, 0);
     const poseFrame = streamCtx.getImageData(0, 0, w, h);
+
     // console.log(myImg);
     
-
     const diffCanvas = document.querySelector('#diffCanvas');
-    const diffContext = diffCanvas.getContext('2d');
+    const diffCtx = diffCanvas.getContext('2d');
+    const diff = diffCtx.createImageData(w, h);
 
-    const diff = diffContext.createImageData(w, h);
+    const thresh = 0.1
+    dPix = pixelmatch(myImg.data, poseFrame.data, diff.data, w, h, {threshold: thresh});
+    diffCtx.putImageData(diff, 0, 0);
 
-    dPix = pixelmatch(myImg.data, poseFrame.data, diff.data, w, h, {threshold: 0.1});
+    // console.log("unmatchedPix: "+dPix);
 
-    ptg = dPix/(w*h);
+    // counts how many pixels are part of a person
+    const d = Uint8ClampedArray.from(poseFrame.data);
+    let c = 0;
+    for(let i = 3; i < d.length; i += 4) {
+        if (d[i]!=0) {
+            c++;
+        }
+    } 
 
-    console.log("pct diff:"+ptg);
-    // console.log("waaaa");
+    // console.log("pct area: "+(c/(w*h)));
+    // socket.emit('server-msg', a);
+    // console.log(a);
+
+    // take half the different pixels (imagine two people standing apart: the areas are counted twice) over the total area of the posing person.
+    const ptg = (1-((dPix/2)/c));
+    const ptgStr = (100*ptg).toString().substr(0,4);
+    // console.log("threshold:"+thresh+" pct match: "+(1-ptg)+"%");
+
+    userMessage.innerText = "pct match: "+ptgStr+"%";
+    // userMessage.innerText = c > dPix;
 
     // diffContext.putImageData(diff, 0, 0);
 });

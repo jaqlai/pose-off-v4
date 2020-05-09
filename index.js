@@ -47,6 +47,10 @@ io.on('connection', (socket) => {
         console.log(msg);
     });
 
+    socket.on('server-msg', (msg) => {   
+      console.log(msg);
+  });
+
     socket.on('disconnect', () => {
         //console.log('disconnected');
       });
@@ -56,7 +60,7 @@ io.on('connection', (socket) => {
       const room = Object.keys(io.sockets.adapter.sids[socket.id])[1];
       io.in(room).emit('match');
       // socket.to(room).emit('match', img);
-      console.log(room);
+      // console.log(room);
     });
 
   });
