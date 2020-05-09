@@ -3,8 +3,6 @@ const http = require('http').createServer(app);
 const io = require('socket.io')(http);
 const PORT = process.env.PORT || 5000;
 
-var room1;
-
 app.get('/js/scan.js', function(req, res){
   res.sendFile(__dirname + '/js/scan.js');
 });
@@ -22,6 +20,7 @@ app.get('/css/style.css', (req, res) => {
 });
 
 io.on('connection', (socket) => {
+  let room = socket.id;
     //io.emit('chat message', "joined room: "+room);
     //console.log('connected');
 
@@ -29,11 +28,13 @@ io.on('connection', (socket) => {
     socket.on('room-hash', (hash) => {
         //ALERT: might need to add a thing to leave  every other room
         socket.join(hash);
-        room1 = hash;
+        room = hash;
+        // console.log(Object.keys(io.sockets.adapter.sids[socket.id]));
+
     });
 
     socket.on('seg-stream', (data) => {
-        socket.broadcast.emit('seg-stream',data);
+      socket.to(room).emit('seg-stream',data);
     });
 
     socket.on('chat message', (msg) => {   
@@ -57,10 +58,16 @@ io.on('connection', (socket) => {
     
 
     socket.on('run-match', () => {
-      const room = Object.keys(io.sockets.adapter.sids[socket.id])[1];
-      io.in(room).emit('match');
+      // const room = Object.keys(io.sockets.adapter.sids[socket.id])[1];
+      socket.to(room).emit('match');
       // socket.to(room).emit('match', img);
       // console.log(room);
+    });
+
+    socket.on('match-result', (pct) => {
+      // socket.to(room).emit('match', img);
+      // console.log(room);
+      // console.log("pct: "+pct)
     });
 
   });

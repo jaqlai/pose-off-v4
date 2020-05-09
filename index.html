@@ -38,18 +38,12 @@
     </div>
 </div>
 
-<!-- messages stuff-->
-<!-- <ul id="messages"></ul>
-<form action="">
-    <input id="m" autocomplete="off" /><button>Send</button>
-</form> -->
-
 
 <!-- include socket and jquery -->
 <script src="/socket.io/socket.io.js"></script>
 <script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
 <script src="https://bundle.run/pixelmatch@5.0.1"></script>
-
+<script src="/js/ui-helper.js"></script>
 <!-- socket stuff -->
 <script>
 var thisRoom;
@@ -63,24 +57,9 @@ $(function () {
         //document.getElementById("room-display").innerHTML = "Current Room: "+location.hash;
     };
 
-    // $('form').submit(function(e){
-    //     e.preventDefault(); // prevents page reloading
-    //     socket.emit('chat message', $('#m').val());
-    //     $('#m').val('');
-    //     return false;
-    // });
-    // socket.on('chat message', function(msg){
-    //      $('#messages').append($('<li>').text(msg));
-    // });
-
     socket.on('seg-stream', (data) => {
         $('#streamImg').attr('src',data);
-        // //console.log("wooho");
-        // var canvas = document.getElementById("streamImg");
-        // var ctx = canvas.getContext("2d");
-        // //console.log(ctx);
-        // ctx = data;
-        // console.log("hahah");
+        // console.log("RECIEVING");
     });
 
 // compare the two images
@@ -94,7 +73,7 @@ $(function () {
 });
 </script>
 
-<script src="/js/ui-helper.js"></script>
+
 <script src="/js/scan.js"></script>
 
 <!-- <script src="/js/output.js"></script> -->

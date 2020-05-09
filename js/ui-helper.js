@@ -3,6 +3,10 @@ const sourceVideo = document.querySelector('video');
 const drawCanvas = document.querySelector('#drawCanvas');
 const streamCanvas = document.querySelector('#streamCanvas');
 
+// canvas setup
+const drawCtx = drawCanvas.getContext('2d');
+const streamCtx = streamCanvas.getContext('2d');
+
 // Model control buttons
 // const fastButton = document.querySelector('button#highSpeed');
 // const normalButton = document.querySelector('button#normalSpeed');

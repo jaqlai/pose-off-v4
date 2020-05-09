@@ -1,12 +1,11 @@
 // Canvas setup
-const drawCtx = drawCanvas.getContext('2d');
-const streamCtx = streamCanvas.getContext('2d');
+
 
 // Global flags
 const flipHorizontal = true;
 let stopLoop = false;
 let isPlaying = false,
-    gotMetadata = false;
+gotMetadata = false;
 let firstRun = true;
 
 const warm = [
@@ -185,7 +184,7 @@ function arrayToMatrix(arr, rowLength) {
 
 // run a comparison of the two canvases
 socket.on('match', () => {
-    console.log("matching ...");
+    // console.log("matching ...");
     const w = drawCanvas.width;
     const h = drawCanvas.height;
     streamCanvas.width = w;
@@ -195,8 +194,6 @@ socket.on('match', () => {
     let streamImg = document.getElementById('streamImg');
     streamCtx.drawImage(streamImg, 0, 0);
     const poseFrame = streamCtx.getImageData(0, 0, w, h);
-
-    // console.log(myImg);
     
     const diffCanvas = document.querySelector('#diffCanvas');
     const diffCtx = diffCanvas.getContext('2d');
@@ -206,10 +203,10 @@ socket.on('match', () => {
     dPix = pixelmatch(myImg.data, poseFrame.data, diff.data, w, h, {threshold: thresh});
     diffCtx.putImageData(diff, 0, 0);
 
-    // console.log("unmatchedPix: "+dPix);
-
     // counts how many pixels are part of a person
     const d = Uint8ClampedArray.from(poseFrame.data);
+    
+    //this actually takes a while maybe it could be async?
     let c = 0;
     for(let i = 3; i < d.length; i += 4) {
         if (d[i]!=0) {
@@ -217,17 +214,12 @@ socket.on('match', () => {
         }
     } 
 
-    // console.log("pct area: "+(c/(w*h)));
-    // socket.emit('server-msg', a);
-    // console.log(a);
-
     // take half the different pixels (imagine two people standing apart: the areas are counted twice) over the total area of the posing person.
-    const ptg = (1-((dPix/2)/c));
-    const ptgStr = (100*ptg).toString().substr(0,4);
-    // console.log("threshold:"+thresh+" pct match: "+(1-ptg)+"%");
+    const ptg = 100*(1-((dPix/2)/c));
+    const ptgStr = (ptg).toString().substr(0,4);
 
     userMessage.innerText = "pct match: "+ptgStr+"%";
-    // userMessage.innerText = c > dPix;
 
-    // diffContext.putImageData(diff, 0, 0);
+    socket.emit('match-result', ptg);
+    
 });
