@@ -22,7 +22,7 @@
 
 </div>
 <div id="dashboard">
-    <p>Status: <span id="userMessage">Click to the left to activate your webcam.</span></p>
+    <p>Status: <span id="userMessage">Webcam must be activated.</span></p>
     <div id="statsDiv" hidden>
         <p>FPS: <span id="fps"></span></p>
     </div>
@@ -34,9 +34,15 @@
         <button id="lowerSpeed" disabled>More accurate</button>
         <button id="lowSpeed" disabled>Most accurate</button> -->
 
-        <button id="reset">Exit / Restart</button>
     </div>
 </div>
+<!-- 
+<li class="login page">
+    <div class="form">
+      <h3 class="title">join a room:</h3>
+      <input class="roomInput" type="text" maxlength="14" />
+    </div>
+</li> -->
 
 
 <!-- include socket and jquery -->
@@ -44,22 +50,28 @@
 <script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
 <script src="https://bundle.run/pixelmatch@5.0.1"></script>
 <script src="/js/ui-helper.js"></script>
+<script src="/js/scan.js"></script>
+
 <!-- socket stuff -->
 <script>
-var thisRoom;
-var socket = io();
+
 $(function () {
     if (location.hash) {
-        //should this convert so that it will still work if the hash is messed with?
         thisRoom = location.hash;
         socket.emit('room-hash', thisRoom);
-        
         //document.getElementById("room-display").innerHTML = "Current Room: "+location.hash;
     };
 
     socket.on('seg-stream', (data) => {
         $('#streamImg').attr('src',data);
-        // console.log("RECIEVING");
+    });
+
+    socket.on('record', (ms) => {
+        //recording for 3000 ms.
+        userMessage.innerText = "Matching...";
+        recording = true;
+        setTimeout(function(){checkScore(ms);}, ms);
+
     });
 
 // compare the two images
@@ -74,7 +86,6 @@ $(function () {
 </script>
 
 
-<script src="/js/scan.js"></script>
 
 <!-- <script src="/js/output.js"></script> -->
 

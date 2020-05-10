@@ -1,3 +1,6 @@
+var socket = io();
+
+
 // element selectors
 const sourceVideo = document.querySelector('video');
 const drawCanvas = document.querySelector('#drawCanvas');

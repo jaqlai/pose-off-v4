@@ -23,7 +23,9 @@ io.on('connection', (socket) => {
   let room = socket.id;
     //io.emit('chat message', "joined room: "+room);
     //console.log('connected');
-
+    socket.on('add-user', (username) => {
+      socket.username = username;
+    });
     // if there's a room hash in the url, it joins that room
     socket.on('room-hash', (hash) => {
         //ALERT: might need to add a thing to leave  every other room
@@ -39,7 +41,7 @@ io.on('connection', (socket) => {
 
     socket.on('chat message', (msg) => {   
         //change to io.emit to send  to  all, not broadcast from the "sending" socket
-        if (room1){
+        if (room){
             socket.to(room1).emit('chat message', msg);
         }
         else {
@@ -69,6 +71,11 @@ io.on('connection', (socket) => {
       // console.log(room);
       // console.log("pct: "+pct)
     });
+
+    setTimeout(function(){
+      socket.to(room).emit('record',3000);
+      console.log("requesting match...");
+    }, 3000);
 
   });
 

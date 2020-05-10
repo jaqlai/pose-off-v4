@@ -7,6 +7,12 @@ let stopLoop = false;
 let isPlaying = false,
 gotMetadata = false;
 let firstRun = true;
+let thisRoom;
+let scores = [];
+let recording = false;
+let totalScore = 0;
+let live=true;
+
 
 const warm = [
     [110, 64, 170], [106, 72, 183], [100, 81, 196], [92, 91, 206],
@@ -53,12 +59,8 @@ function load(multiplier=0.75, stride=8) {
     drawCanvas.width = sourceVideo.videoWidth;
     drawCanvas.height = sourceVideo.videoHeight;
 
-    // console.log("video width: "+sourceVideo.width);
-    // console.log("video height: "+sourceVideo.height);
-
-    // drawCanvas.width = sourceVideo.width;
-    // drawCanvas.height = sourceVideo.height;
-
+    // streamCanvas.width = drawCanvas.width;
+    // streamCanvas.height = drawCanvas.height;
 
     userMessage.innerText = "Loading model...";
 
@@ -90,18 +92,24 @@ async function loop(net) {
         // use this code to segment by parts (also have to change coloredImage below)
         // const segmentation = await net.segmentPersonParts(sourceVideo, segmentPersonConfig);
 
-        // skip if nothing is there
-        if (segmentation.allPoses[0] === undefined) {
-            // console.info("No segmentation data");
-            continue;
-        }
+        // // skip if nothing is there
+        // if (segmentation.allPoses[0] === undefined) {
+        //     // console.info("No segmentation data");
+        //     continue;
+        // }
 
         // Draw the data to canvas
         draw(segmentation);
 
+        if(recording) {
+            let m = matchPix();
+            scores.push(m);
+        }
+
+        if(live) {
         // might have to have a png option for non-chrome?
         socket.emit('seg-stream', drawCanvas.toDataURL('image/webp'));
-
+        }
     }
 
 }
@@ -125,6 +133,7 @@ function draw(personSegmentation) {
     bodyPix.drawMask(
         drawCanvas, drawCanvas, coloredImage, opacity, maskBlurAmount,
         flipHorizontal);
+
 
     // }
 
@@ -182,13 +191,14 @@ function arrayToMatrix(arr, rowLength) {
     return newArray;
 }
 
-// run a comparison of the two canvases
-socket.on('match', () => {
-    // console.log("matching ...");
+function matchPix() {
     const w = drawCanvas.width;
     const h = drawCanvas.height;
+
+    // not sure why this is neccessary?? But it seems like it is.
     streamCanvas.width = w;
     streamCanvas.height = h;
+    
     const myImg = drawCtx.getImageData(0, 0, w, h);
 
     let streamImg = document.getElementById('streamImg');
@@ -214,12 +224,37 @@ socket.on('match', () => {
         }
     } 
 
-    // take half the different pixels (imagine two people standing apart: the areas are counted twice) over the total area of the posing person.
-    const ptg = 100*(1-((dPix/2)/c));
+    return 100*(1-((dPix/2)/c))
+}
+
+// run a comparison of the two canvases
+socket.on('match', () => {
+
+    const ptg = matchPix();
+
     const ptgStr = (ptg).toString().substr(0,4);
 
-    userMessage.innerText = "pct match: "+ptgStr+"%";
+    // userMessage.innerText = "pct match: "+ptgStr+"%";
 
     socket.emit('match-result', ptg);
     
 });
+
+function checkScore(ms) {
+    let avg = 0;
+    recording = false;
+    // console.log(scores);
+    scores.forEach(function(pct){
+        
+        avg+=pct;
+    });
+    avg /= scores.length;
+    console.log("Average Accuracy of "+avg+"% over "+(ms/3000)+" seconds!");
+    const s = Math.round(avg*(ms/1000));
+    addScore(s);
+}
+
+function addScore(s) {
+    userMessage.innerText = "Added "+s+" pts!"
+    totalScore += s;
+}
