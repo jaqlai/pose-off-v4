@@ -59,8 +59,8 @@ function load(multiplier=0.75, stride=8) {
     drawCanvas.width = sourceVideo.videoWidth;
     drawCanvas.height = sourceVideo.videoHeight;
 
-    // streamCanvas.width = drawCanvas.width;
-    // streamCanvas.height = drawCanvas.height;
+    streamCanvas.width = drawCanvas.width;
+    streamCanvas.height = drawCanvas.height;
 
     userMessage.innerText = "Loading model...";
 
@@ -92,14 +92,14 @@ async function loop(net) {
         // use this code to segment by parts (also have to change coloredImage below)
         // const segmentation = await net.segmentPersonParts(sourceVideo, segmentPersonConfig);
 
-        // // skip if nothing is there
-        // if (segmentation.allPoses[0] === undefined) {
-        //     // console.info("No segmentation data");
-        //     continue;
-        // }
+        // skip if nothing is there
+        if (segmentation.allPoses[0] === undefined) {
+            // console.info("No segmentation data");
+            continue;
+        }
 
         // Draw the data to canvas
-        draw(segmentation);
+        draw(segmentation.data, drawCanvas);
 
         if(recording) {
             let m = matchPix();
@@ -108,8 +108,22 @@ async function loop(net) {
 
         if(live) {
         // might have to have a png option for non-chrome?
-        socket.emit('seg-stream', drawCanvas.toDataURL('image/webp'));
+        socket.emit('seg-stream', drawCanvas.toDataURL('image/webp', 0.1));
         }
+
+        // if(live) {
+        //     // might have to have a png option for non-chrome?
+        //     socket.emit('seg-stream', segmentation.data);
+        // }
+        // console.log(roughObjSize = JSON.stringify(segmentation.data).length);
+        // console.log(roughObjSize = JSON.stringify(drawCanvas.toDataURL('image/webp', 0.01)).length);
+        // console.log("-------");
+
+        // socket.on('seg-stream', (segData)=> {
+        //     console.log(segData.width);
+        //     draw(segData, streamCanvas);
+        // });
+
     }
 
 }
@@ -117,41 +131,19 @@ async function loop(net) {
 
 
 // Use the bodyPix draw API's
-function draw(personSegmentation) {
+function draw(segData, canvas) {
 
-    // if (showMaskToggle.checked) {
-    let targetSegmentation = personSegmentation;
+    const myColor = {r: 0, g: 255, b: 0, a: 100};
+    
+    const coloredImage = toMask(segData, myColor);
 
-    const foregroundColor = {r: 0, g: 255, b: 0, a: 100};
-    const backgroundColor = {r: 0, g: 0, b: 0, a: 0};
-    const coloredImage = bodyPix.toMask(targetSegmentation, foregroundColor, backgroundColor);
-  
-    // const coloredImage = bodyPix.toColoredPartMask(targetSegmentation, warm);
     const opacity = 0.5;
-    const maskBlurAmount = 0;
+    // const maskBlurAmount = 0;
     // change the second drawcanvas to sourceVideo to overlay on video stream
-    bodyPix.drawMask(
-        drawCanvas, drawCanvas, coloredImage, opacity, maskBlurAmount,
-        flipHorizontal);
-
-
-    // }
-
-    // // drawMask clears the canvas, drawKeypoints doesn't
-    // if (showMaskToggle.checked === false) {
-    //     // bodyPix.drawMask redraws the canvas. Clear with not
-    //     drawCtx.clearRect(0, 0, drawCanvas.width, drawCanvas.height);
-    // }
-
-    // // Show dots from pose detection
-    // if (showPointsToggle.checked) {
-    //     personSegmentation.allPoses.forEach(pose => {
-    //         if (flipHorizontal) {
-    //             pose = bodyPix.flipPoseHorizontal(pose, personSegmentation.width);
-    //         }
-    //         drawKeypoints(pose.keypoints, 0.9, drawCtx);
-    //     });
-    // }
+    // bodyPix.drawMask(
+    //     canvas, canvas, coloredImage, opacity, maskBlurAmount,
+    //     flipHorizontal);
+    drawMask(canvas, coloredImage, opacity, 640, 480);
 
 }
 
@@ -257,4 +249,60 @@ function checkScore(ms) {
 function addScore(s) {
     userMessage.innerText = "Added "+s+" pts!"
     totalScore += s;
+}
+
+function toMask(segData, clr = {
+    r: 0,
+    g: 255,
+    b: 0,
+    a: 255
+}, width = 640, height = 480, foregroundIds = [1]) {
+    if (Array.isArray(segData) &&
+        segData.length === 0) {
+        return null;
+    }
+    const bytes = new Uint8ClampedArray(width * height * 4);
+    for (let i = 0; i < height; i += 1) {
+        for (let j = 0; j < width; j += 1) {
+            const n = i * width + j;
+            bytes[4 * n + 0] = 0;
+            bytes[4 * n + 1] = 0;
+            bytes[4 * n + 2] = 0;
+            bytes[4 * n + 3] = 0;
+            if (foregroundIds.some(id => id === segData[n])) {
+                bytes[4 * n] = clr.r;
+                bytes[4 * n + 1] = clr.g;
+                bytes[4 * n + 2] = clr.b;
+                bytes[4 * n + 3] = clr.a;
+            }
+        }
+    }
+    return new ImageData(bytes, width, height);
+}
+
+function flipCanvasHorizontal(canvas) {
+    const ctx = canvas.getContext('2d');
+    ctx.scale(-1, 1);
+    ctx.translate(-canvas.width, 0);
+}
+
+function drawMask(canvas, maskImage, maskOpacity = 0.7, width, height) {
+    canvas.width = width;
+    canvas.height = height;
+    const ctx = canvas.getContext('2d');
+    ctx.save();
+    flipCanvasHorizontal(canvas);
+    // ctx.drawImage(image, 0, 0);
+    ctx.globalAlpha = maskOpacity;
+    if (maskImage) {
+        // assertSameDimensions({width, height}, maskImage, 'image', 'mask');
+        // const mask = renderImageDataToOffScreenCanvas(maskImage, 'mask');
+        // ctx.drawImage(mask, 0, 0, width, height);
+        ctx.putImageData(maskImage, 0, 0);
+    }
+    ctx.restore();
+}
+
+function usrMsg(msg) {
+    document.getElementById("overlay").style.opacity = 0.5;
 }
