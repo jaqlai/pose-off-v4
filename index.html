@@ -15,11 +15,43 @@
 </head>
 
 <body>
-    <div id="overlay">hello</div>
+
+
+<div id="overlay" class="screen" v-bind:style="{ 'background-color':'rgba(255,255,255,'+overlayOpacity+')'}">
+
+    <div id="welcome" class="screen" v-if="showWelcome">
+        <h1>Welcome!</h1>
+        <button id ="openJoin" v-on:click="openMenu('join')">join room</button>
+        <button id ="createRoom" v-on:click="openMenu('create')">new room</button>
+    </div>
+
+    <div id="homeMenu" class="screen" v-if="showMenu">
+        <form @submit="joinRoom">
+            <input class="roomInput" v-model="roomName" id="roomInput" type="text" maxlength="14"/>
+            <!-- <button v-on:click="joinRoom">{{mode}}</button> -->
+            <input type="submit" value="Go"></input>
+        </form>
+
+    </div>
+
+    <div id="lobby" class="screen" v-if="showLobby">
+        <div id="gameSetup" class="leftBar"></div>
+        <button>Start Game</button>
+        <!-- <div id="footer"></div> -->
+    </div>
+
+    <div style="display:none">
+        <button id ="colorButt" v-on:click="changeColor">new color</button>
+   </div>
+
+</div>
+
+
 <div id="main">
     <img id="streamImg">
     <canvas id = "streamCanvas"></canvas>
     <canvas id = "diffCanvas"></canvas>
+    <canvas id = "offscreenCanvas"></canvas>
     <canvas id = "drawCanvas"></canvas>
     <div id="vidContainer" style="display:none">
     <video id="myVid" autoplay playsinline style="display:none"></video>
@@ -59,19 +91,13 @@
 
 <!-- socket stuff -->
 <script>
-
-$(function () {
     if (location.hash) {
-        thisRoom = location.hash;
-        socket.emit('room-hash', thisRoom);
+        socket.emit('room-hash', location.hash);
+        console.log("hey")
         //document.getElementById("room-display").innerHTML = "Current Room: "+location.hash;
     };
-
-    socket.on('seg-stream', (data) => {
-        $('#streamImg').attr('src',data);
-    });
-
     socket.on('record', (ms) => {
+        console.log("what");
         //recording for 3000 ms.
         userMessage.innerText = "Matching...";
         recording = true;
@@ -79,17 +105,27 @@ $(function () {
 
     });
 
+$(function () {
+    socket.on('seg-stream', (data) => {
+        $('#streamImg').attr('src',data);
+    });
 // compare the two images
-    function foo() {
-    socket.emit('run-match', drawCanvas.toDataURL('image/webp'));
-    // console.log("lmfao");
-    setTimeout(foo, 100);
-    }
+//     function foo() {
+//     socket.emit('run-match', drawCanvas.toDataURL('image/webp'));
+//     // console.log("lmfao");
+//     setTimeout(foo, 100);
+//     }
 
-    foo();
+//     foo();
 });
+document.getElementById("overlay").style.opacity = 1;
 
-// document.getElementById("overlay").style.opacity = 1;
+if (!location.hash) {
+    setTimeout(function() { 
+        v.showWelcome = true;
+    },100);
+};
+
 </script>
 
 

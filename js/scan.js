@@ -62,6 +62,9 @@ function load(multiplier=0.75, stride=8) {
     streamCanvas.width = drawCanvas.width;
     streamCanvas.height = drawCanvas.height;
 
+    offscreenCanvas.width = drawCanvas.width;
+    offscreenCanvas.height = drawCanvas.height;
+
     userMessage.innerText = "Loading model...";
 
     console.log(`loading BodyPix with multiplier ${multiplier} and stride ${stride}`);
@@ -92,14 +95,8 @@ async function loop(net) {
         // use this code to segment by parts (also have to change coloredImage below)
         // const segmentation = await net.segmentPersonParts(sourceVideo, segmentPersonConfig);
 
-        // skip if nothing is there
-        if (segmentation.allPoses[0] === undefined) {
-            // console.info("No segmentation data");
-            continue;
-        }
-
         // Draw the data to canvas
-        draw(segmentation.data, drawCanvas);
+        draw(segmentation.data);
 
         if(recording) {
             let m = matchPix();
@@ -111,18 +108,11 @@ async function loop(net) {
         socket.emit('seg-stream', drawCanvas.toDataURL('image/webp', 0.1));
         }
 
-        // if(live) {
-        //     // might have to have a png option for non-chrome?
-        //     socket.emit('seg-stream', segmentation.data);
-        // }
-        // console.log(roughObjSize = JSON.stringify(segmentation.data).length);
-        // console.log(roughObjSize = JSON.stringify(drawCanvas.toDataURL('image/webp', 0.01)).length);
-        // console.log("-------");
-
-        // socket.on('seg-stream', (segData)=> {
-        //     console.log(segData.width);
-        //     draw(segData, streamCanvas);
-        // });
+        // skip if nothing is there
+        if (segmentation.allPoses[0] === undefined) {
+            // console.info("No segmentation data");
+            continue;
+        }
 
     }
 
@@ -131,19 +121,21 @@ async function loop(net) {
 
 
 // Use the bodyPix draw API's
-function draw(segData, canvas) {
+function draw(segData) {
 
-    const myColor = {r: 0, g: 255, b: 0, a: 100};
+    // const myColor = {r: 0, g: 255, b: 0, a: 100};
+    const myColor = colors[0];
     
     const coloredImage = toMask(segData, myColor);
 
     const opacity = 0.5;
-    // const maskBlurAmount = 0;
+    const maskBlurAmount = 0;
     // change the second drawcanvas to sourceVideo to overlay on video stream
     // bodyPix.drawMask(
     //     canvas, canvas, coloredImage, opacity, maskBlurAmount,
     //     flipHorizontal);
-    drawMask(canvas, coloredImage, opacity, 640, 480);
+
+    drawMask(coloredImage);
 
 }
 
@@ -201,7 +193,7 @@ function matchPix() {
     const diffCtx = diffCanvas.getContext('2d');
     const diff = diffCtx.createImageData(w, h);
 
-    const thresh = 0.1
+    const thresh = 0.2;
     dPix = pixelmatch(myImg.data, poseFrame.data, diff.data, w, h, {threshold: thresh});
     diffCtx.putImageData(diff, 0, 0);
 
@@ -220,17 +212,17 @@ function matchPix() {
 }
 
 // run a comparison of the two canvases
-socket.on('match', () => {
+// socket.on('match', () => {
 
-    const ptg = matchPix();
+//     const ptg = matchPix();
 
-    const ptgStr = (ptg).toString().substr(0,4);
+//     const ptgStr = (ptg).toString().substr(0,4);
 
-    // userMessage.innerText = "pct match: "+ptgStr+"%";
+//     // userMessage.innerText = "pct match: "+ptgStr+"%";
 
-    socket.emit('match-result', ptg);
+//     socket.emit('match-result', ptg);
     
-});
+// });
 
 function checkScore(ms) {
     let avg = 0;
@@ -280,27 +272,40 @@ function toMask(segData, clr = {
     return new ImageData(bytes, width, height);
 }
 
-function flipCanvasHorizontal(canvas) {
-    const ctx = canvas.getContext('2d');
-    ctx.scale(-1, 1);
-    ctx.translate(-canvas.width, 0);
-}
+// function drawMask(canvas, maskImage, width, height) {
+//     canvas.width = width;
+//     canvas.height = height;
+    
+//     offCtx.putImageData(maskImage,0,0);
 
-function drawMask(canvas, maskImage, maskOpacity = 0.7, width, height) {
-    canvas.width = width;
-    canvas.height = height;
-    const ctx = canvas.getContext('2d');
-    ctx.save();
-    flipCanvasHorizontal(canvas);
-    // ctx.drawImage(image, 0, 0);
-    ctx.globalAlpha = maskOpacity;
-    if (maskImage) {
-        // assertSameDimensions({width, height}, maskImage, 'image', 'mask');
-        // const mask = renderImageDataToOffScreenCanvas(maskImage, 'mask');
-        // ctx.drawImage(mask, 0, 0, width, height);
-        ctx.putImageData(maskImage, 0, 0);
-    }
-    ctx.restore();
+//     const ctx = canvas.getContext('2d');
+    
+//     ctx.save();
+//     ctx.scale(-1, 1);
+//     ctx.translate(-canvas.width, 0);
+//     ctx.drawImage(offscreenCanvas, 0, 0);
+//     ctx.restore();
+//     ctx.globalAlpha = 0.5;
+
+// }
+
+function drawMask(maskImage) {
+    //somehow this width/height stuff clears the canvas.
+    drawCanvas.width = drawCanvas.width;
+    drawCanvas.height = drawCanvas.height;
+    
+    offCtx.putImageData(maskImage,0,0);
+
+    const ctx = drawCanvas.getContext('2d');
+    
+    drawCtx.save();
+    // drawCtx.scale(2, 2);
+    drawCtx.scale(-1, 1);
+    drawCtx.translate(-drawCanvas.width, 0);
+    drawCtx.drawImage(offscreenCanvas, 0, 0);
+    drawCtx.restore();
+    drawCtx.globalAlpha = 0.5;
+
 }
 
 function usrMsg(msg) {

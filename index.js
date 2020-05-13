@@ -31,6 +31,11 @@ io.on('connection', (socket) => {
         //ALERT: might need to add a thing to leave  every other room
         socket.join(hash);
         room = hash;
+        // const clients = io.nsps["/"].adapter.rooms[room];
+        // const numClients = Object.keys(clients).length;
+        // if (numClients == 1)
+        socket.emit('joined-room', );
+        // socket.to(room).emit('seg-stream',data);
         // console.log(Object.keys(io.sockets.adapter.sids[socket.id]));
 
     });
@@ -59,18 +64,18 @@ io.on('connection', (socket) => {
       });
     
 
-    socket.on('run-match', () => {
-      // const room = Object.keys(io.sockets.adapter.sids[socket.id])[1];
-      socket.to(room).emit('match');
-      // socket.to(room).emit('match', img);
-      // console.log(room);
-    });
+    // socket.on('run-match', () => {
+    //   // const room = Object.keys(io.sockets.adapter.sids[socket.id])[1];
+    //   socket.to(room).emit('match');
+    //   // socket.to(room).emit('match', img);
+    //   // console.log(room);
+    // });
 
-    socket.on('match-result', (pct) => {
-      // socket.to(room).emit('match', img);
-      // console.log(room);
-      // console.log("pct: "+pct)
-    });
+    // socket.on('match-result', (pct) => {
+    //   // socket.to(room).emit('match', img);
+    //   // console.log(room);
+    //   // console.log("pct: "+pct)
+    // });
 
     setTimeout(function(){
       socket.to(room).emit('record',3000);

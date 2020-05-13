@@ -1,14 +1,16 @@
 var socket = io();
-
+var colors = [{r: 0, g: 255, b: 0, a: 100}, {r: 255, g: 0, b: 0, a: 100}, {r: 0, g: 0, b: 255, a: 100}];
 
 // element selectors
 const sourceVideo = document.querySelector('video');
 const drawCanvas = document.querySelector('#drawCanvas');
+const offscreenCanvas = document.querySelector('#offscreenCanvas');
 const streamCanvas = document.querySelector('#streamCanvas');
 
 // canvas setup
 const drawCtx = drawCanvas.getContext('2d');
 const streamCtx = streamCanvas.getContext('2d');
+const offCtx = offscreenCanvas.getContext('2d');
 
 // Model control buttons
 // const fastButton = document.querySelector('button#highSpeed');
@@ -54,3 +56,41 @@ function enableDashboard(initial=false) {
 
     firstRun = false;
 }
+
+var v = new Vue({
+    el: '#overlay',
+    data:{
+        name:"shaun",
+        showMenu:false,
+        showWelcome:false,
+        roomName:"",
+        overlayOpacity:0.5,
+        showLobby: false,
+        gameSettings: {
+            rounds:3
+        }
+    },
+    methods: {
+      changeColor: () => {
+        colors.push(colors.shift());
+      },
+
+      openMenu: (mode) => {
+        v.showWelcome = false;
+        v.showMenu = true;
+        v.mode = mode;
+      },
+      joinRoom: () => {
+        location.hash = v.roomName;
+        socket.emit('room-hash', location.hash);
+        v.showMenu=false;
+        v.overlayOpacity=0;
+        console.log(v.overlayOpacity);
+      },
+    }
+});
+
+socket.on('joined-room', () => {
+    v.showLobby=true;
+});
+
