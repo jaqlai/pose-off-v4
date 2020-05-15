@@ -11,26 +11,9 @@ let thisRoom;
 let scores = [];
 let recording = false;
 let totalScore = 0;
-let live=true;
-
-
-const warm = [
-    [110, 64, 170], [106, 72, 183], [100, 81, 196], [92, 91, 206],
-    [84, 101, 214], [75, 113, 221], [66, 125, 224], [56, 138, 226],
-    [48, 150, 224], [40, 163, 220], [33, 176, 214], [29, 188, 205],
-    [26, 199, 194], [26, 210, 182], [28, 219, 169], [33, 227, 155],
-    [41, 234, 141], [51, 240, 128], [64, 243, 116], [79, 246, 105],
-    [96, 247, 97],  [115, 246, 91], [134, 245, 88], [155, 243, 88]
-  ];
-
-  const warmColors = [
-    [110, 64, 170], [106, 72, 183], [100, 81, 196], [92, 91, 206],
-    [84, 101, 214], [75, 113, 221], [66, 125, 224], [56, 138, 226],
-    [48, 150, 224], [40, 163, 220], [33, 176, 214], [29, 188, 205],
-    [26, 199, 194], [26, 210, 182], [28, 219, 169], [33, 227, 155],
-    [41, 234, 141], [51, 240, 128], [64, 243, 116], [79, 246, 105],
-    [96, 247, 97],  [115, 246, 91], [134, 245, 88], [155, 243, 88]
-  ];
+let aspect;
+const pixelCellWidth = 14.0;
+// let colorScheme = colorSchemes['rainbow'];
 
 // check if metadata is ready - we need the sourceVideo size
 sourceVideo.onloadedmetadata = () => {
@@ -56,14 +39,21 @@ function load(multiplier=0.75, stride=8) {
     console.log("video height: "+sourceVideo.videoHeight);
 
     // Canvas results for displaying masks
-    drawCanvas.width = sourceVideo.videoWidth;
-    drawCanvas.height = sourceVideo.videoHeight;
+    offscreenCanvas.width = sourceVideo.videoWidth;
+    offscreenCanvas.height = sourceVideo.videoHeight;
+    aspect = sourceVideo.videoWidth/sourceVideo.videoHeight;
 
-    streamCanvas.width = drawCanvas.width;
-    streamCanvas.height = drawCanvas.height;
 
-    offscreenCanvas.width = drawCanvas.width;
-    offscreenCanvas.height = drawCanvas.height;
+    // drawCanvas.width = vw;
+    // drawCanvas.height = drawCanvas.width/aspect;
+    drawCanvas.height = vh;
+    drawCanvas.width = drawCanvas.height*aspect;
+
+    streamCanvas.height = vh;
+    streamCanvas.width = streamCanvas.height*aspect;
+
+    makeGrid(pixelCellWidth);
+
 
     userMessage.innerText = "Loading model...";
 
@@ -72,15 +62,29 @@ function load(multiplier=0.75, stride=8) {
     bodyPix.load({multiplier: multiplier, stride: stride, quantBytes: 4})
         .then(net => loop(net))
         .catch(err => console.error(err));
+    v.overlayOpacity = 0.3;
 }
 
 async function loop(net) {
+    // let skipCount = 0;
+    skip = false;
 
     stopLoop = false;
 
     enableDashboard(firstRun); // Show the dashboard
 
     while (isPlaying && !stopLoop) {
+        // skipCount++;
+        // if(skipCount < 2) {
+        //     console.log('skipped')
+        //     continue;
+        // }
+        // else {
+        //     skipCount = 0;
+        // }
+
+        skip = !skip;
+        // var t0 = performance.now()
 
         // BodyPix setup
         const segmentPersonConfig = {
@@ -90,31 +94,50 @@ async function loop(net) {
             internalResolution: 'high',
             segmentationThreshold: 0.5,         // default is 0.7
         };
-        const segmentation = await net.segmentPerson(sourceVideo, segmentPersonConfig);
+        // const segmentation = await net.segmentPerson(sourceVideo, segmentPersonConfig);
 
         // use this code to segment by parts (also have to change coloredImage below)
-        // const segmentation = await net.segmentPersonParts(sourceVideo, segmentPersonConfig);
+        const segmentation = await net.segmentPersonParts(sourceVideo, segmentPersonConfig);
 
         // Draw the data to canvas
-        draw(segmentation.data);
+        draw(segmentation);
+
+        // var t1 = performance.now();
+        // console.log("getUrl: " + (t1 - t0) + "  ms.");
+
 
         if(recording) {
             let m = matchPix();
             scores.push(m);
         }
 
-        if(live) {
-        // might have to have a png option for non-chrome?
-        socket.emit('seg-stream', drawCanvas.toDataURL('image/webp', 0.1));
+        // if(live && !skip) {
+        // // might have to have a png option for non-chrome?
+        //     socket.emit('seg-stream', drawCanvas.toDataURL('image/webp', 0.1));
+        // // drawCanvas.toBlob(function(blob) {
+        // //     var url = URL.createObjectURL(blob);
+        // //     socket.emit('seg-stream', url);
+
+        if (live && !skip) {
+                socket.emit('seg-stream', miniCanvas.toDataURL('image/webp', 1));
         }
+
+        // // });
+        // }
 
         // skip if nothing is there
         if (segmentation.allPoses[0] === undefined) {
             // console.info("No segmentation data");
             continue;
         }
+        // var t1 = performance.now();
+        // console.log("total: " + 1000/(t1 - t0) + "  fps.");
 
     }
+
+    // var t1 = performance.now();
+    // console.log("Call to doSomething took " + (t1 - t0) + " milliseconds.");
+    // console.log("yo");
 
 }
 
@@ -126,16 +149,14 @@ function draw(segData) {
     // const myColor = {r: 0, g: 255, b: 0, a: 100};
     const myColor = colors[0];
     
-    const coloredImage = toMask(segData, myColor);
+    // const coloredImage = toMask(segData, myColor);
+    coloredImage =bodyPix.toColoredPartMask(segData, colorScheme)
+    // bodyPix.drawPixelatedMask(
+    //     drawCanvas, offscreenCanvas, coloredImage, 0.5, 0,
+    //     true, 10.0);
 
-    const opacity = 0.5;
-    const maskBlurAmount = 0;
-    // change the second drawcanvas to sourceVideo to overlay on video stream
-    // bodyPix.drawMask(
-    //     canvas, canvas, coloredImage, opacity, maskBlurAmount,
-    //     flipHorizontal);
-
-    drawMask(coloredImage);
+    // drawMask(coloredImage);
+    drawPixelMask(coloredImage);
 
 }
 
@@ -247,7 +268,7 @@ function toMask(segData, clr = {
     r: 0,
     g: 255,
     b: 0,
-    a: 255
+    a: 100
 }, width = 640, height = 480, foregroundIds = [1]) {
     if (Array.isArray(segData) &&
         segData.length === 0) {
@@ -272,22 +293,6 @@ function toMask(segData, clr = {
     return new ImageData(bytes, width, height);
 }
 
-// function drawMask(canvas, maskImage, width, height) {
-//     canvas.width = width;
-//     canvas.height = height;
-    
-//     offCtx.putImageData(maskImage,0,0);
-
-//     const ctx = canvas.getContext('2d');
-    
-//     ctx.save();
-//     ctx.scale(-1, 1);
-//     ctx.translate(-canvas.width, 0);
-//     ctx.drawImage(offscreenCanvas, 0, 0);
-//     ctx.restore();
-//     ctx.globalAlpha = 0.5;
-
-// }
 
 function drawMask(maskImage) {
     //somehow this width/height stuff clears the canvas.
@@ -295,8 +300,6 @@ function drawMask(maskImage) {
     drawCanvas.height = drawCanvas.height;
     
     offCtx.putImageData(maskImage,0,0);
-
-    const ctx = drawCanvas.getContext('2d');
     
     drawCtx.save();
     // drawCtx.scale(2, 2);
@@ -308,6 +311,125 @@ function drawMask(maskImage) {
 
 }
 
-function usrMsg(msg) {
-    document.getElementById("overlay").style.opacity = 0.5;
+function makeGrid(pixelCellWidth) {
+    gridCanvas.width = drawCanvas.width;
+    gridCanvas.height = drawCanvas.height;
+    gridCtx.globalAlpha = 0.8;
+      // Draws vertical grid lines that are `pixelCellWidth` apart from each other.
+      for (let i = 0; i < drawCanvas.width; i++) {
+        gridCtx.beginPath();
+        gridCtx.strokeStyle = '#ffffff';
+        gridCtx.moveTo(pixelCellWidth * i, 0);
+        gridCtx.lineTo(pixelCellWidth * i, drawCanvas.height);
+        gridCtx.stroke();
+      }
+    
+      // Draws horizontal grid lines that are `pixelCellWidth` apart from each
+      // other.
+      for (let i = 0; i < drawCanvas.height; i++) {
+        gridCtx.beginPath();
+        gridCtx.strokeStyle = '#ffffff';
+        gridCtx.moveTo(0, pixelCellWidth * i);
+        gridCtx.lineTo(drawCanvas.width, pixelCellWidth * i);
+        gridCtx.stroke();
+      }
 }
+
+function project(source, canvas) {
+    canvas.width = canvas.width;
+    canvas.height = canvas.height;
+    ctx = canvas.getContext('2d');
+    ctx.imageSmoothingEnabled = false;
+
+    // ctx.save();
+    // ctx.scale(2, 2);
+    ctx.scale(-1, 1);
+    ctx.translate(-canvas.width, 0);
+    ctx.globalAlpha = 0.8;
+
+    ctx.drawImage(
+        source, 0, 0, source.width, source.height, 0,
+        0, canvas.width, canvas.height);
+
+    // ctx.restore();
+}
+
+function drawPixelMask(maskImage) {
+    //somehow this width/height stuff clears the canvas.
+
+
+    
+    offCtx.putImageData(maskImage,0,0);
+
+    miniCanvas.width = drawCanvas.width * (1.0 / pixelCellWidth);
+    miniCanvas.height = drawCanvas.height * (1.0 / pixelCellWidth);
+    miniCtx.drawImage(
+    offscreenCanvas, 0, 0, offscreenCanvas.width, offscreenCanvas.height, 0, 0,
+    miniCanvas.width, miniCanvas.height);
+
+    project(miniCanvas, drawCanvas)
+}
+
+// function drawPixelMask(maskImage) {
+//     //somehow this width/height stuff clears the canvas.
+//     drawCanvas.width = drawCanvas.width;
+//     drawCanvas.height = drawCanvas.height;
+//     const pixelCellWidth = 14.0;
+
+//     drawCtx.save();
+//     // drawCtx.scale(2, 2);
+//     drawCtx.scale(-1, 1);
+//     drawCtx.translate(-drawCanvas.width, 0);
+//     drawCtx.globalAlpha = 0.8;
+
+    
+//     offCtx.putImageData(maskImage,0,0);
+
+//     miniCanvas.width = drawCanvas.width * (1.0 / pixelCellWidth);
+//     miniCanvas.height = drawCanvas.height * (1.0 / pixelCellWidth);
+//     miniCtx.drawImage(
+//     offscreenCanvas, 0, 0, offscreenCanvas.width, offscreenCanvas.height, 0, 0,
+//     miniCanvas.width, miniCanvas.height);
+
+//     drawCtx.imageSmoothingEnabled = false;
+
+//     drawCtx.drawImage(
+//         miniCanvas, 0, 0, miniCanvas.width, miniCanvas.height, 0,
+//         0, drawCanvas.width, drawCanvas.height);
+
+//     // drawCtx.drawImage(gridCanvas, 0,0);
+
+//     for (let i = 0; i < drawCanvas.width; i++) {
+//         drawCtx.beginPath();
+//         drawCtx.strokeStyle = '#ffffff';
+//         drawCtx.moveTo(pixelCellWidth * i, 0);
+//         drawCtx.lineTo(pixelCellWidth * i, drawCanvas.height);
+//         drawCtx.stroke();
+//       }
+    
+//       // Draws horizontal grid lines that are `pixelCellWidth` apart from each
+//       // other.
+//       for (let i = 0; i < drawCanvas.height; i++) {
+//         drawCtx.beginPath();
+//         drawCtx.strokeStyle = '#ffffff';
+//         drawCtx.moveTo(0, pixelCellWidth * i);
+//         drawCtx.lineTo(drawCanvas.width, pixelCellWidth * i);
+//         drawCtx.stroke();
+//       }
+
+//     drawCtx.restore();
+
+// }
+
+function usrMsg(msg) {
+    document.getElementById("overlay").style.opacity = 0.8;
+}
+
+// function broadcast(live) {
+//     if (live) {
+//         socket.emit('seg-stream', miniCanvas.toDataURL('image/webp', 0.1));
+//         setTimeout(function () {broadcast(live)}, 33);
+//     }
+// }
+
+// broadcast(live);

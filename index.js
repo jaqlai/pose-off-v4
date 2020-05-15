@@ -11,6 +11,10 @@ app.get('/js/ui-helper.js', function(req, res){
   res.sendFile(__dirname + '/js/ui-helper.js');
 });
 
+app.get('/js/game.js', function(req, res){
+  res.sendFile(__dirname + '/js/game.js');
+});
+
 app.get('/', (req, res) => {
   res.sendFile(__dirname + '/index.html');
 });
@@ -24,8 +28,9 @@ io.on('connection', (socket) => {
     //io.emit('chat message', "joined room: "+room);
     //console.log('connected');
     socket.on('add-user', (username) => {
-      socket.username = username;
+      socket.to(room).emit('new-user',username);
     });
+    
     // if there's a room hash in the url, it joins that room
     socket.on('room-hash', (hash) => {
         //ALERT: might need to add a thing to leave  every other room
@@ -34,7 +39,9 @@ io.on('connection', (socket) => {
         // const clients = io.nsps["/"].adapter.rooms[room];
         // const numClients = Object.keys(clients).length;
         // if (numClients == 1)
-        socket.emit('joined-room', );
+        socket.emit('joined-room');
+        console.log(socket.ready);
+        console.log(socket.posed);
         // socket.to(room).emit('seg-stream',data);
         // console.log(Object.keys(io.sockets.adapter.sids[socket.id]));
 
@@ -63,7 +70,13 @@ io.on('connection', (socket) => {
         //console.log('disconnected');
       });
     
+    socket.on('start-game', () => {
+      io.in(room).emit('start-game');
+    });
 
+    socket.on('posing', (v, s) => {
+      socket.to(rooom).emit('start-round', {video:v, time:s});
+    });
     // socket.on('run-match', () => {
     //   // const room = Object.keys(io.sockets.adapter.sids[socket.id])[1];
     //   socket.to(room).emit('match');
@@ -77,10 +90,10 @@ io.on('connection', (socket) => {
     //   // console.log("pct: "+pct)
     // });
 
-    setTimeout(function(){
-      socket.to(room).emit('record',3000);
-      console.log("requesting match...");
-    }, 3000);
+    // setTimeout(function(){
+    //   socket.to(room).emit('record',3000);
+    //   console.log("requesting match...");
+    // }, 3000);
 
   });
 

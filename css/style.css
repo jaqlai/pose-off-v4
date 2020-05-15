@@ -34,8 +34,9 @@ video {
     /* height: 480px;
     width: 640px; */
 }
-
-
+/* #streamImg {
+  display:none;
+} */
 canvas, img{
     position: absolute;
     top: 0;
@@ -66,7 +67,7 @@ img {
     left: 0;
     right: 0;
     bottom: 0;
-    background-color:rgba(255,255,255,0.5);
+    background-color:rgba(255,255,255,1.0);
     /* background-color:black; */
     z-index: 2;
     cursor: pointer;
@@ -88,6 +89,10 @@ img {
     text-align: center;
     padding: 20vw 0;
     margin: auto;
+  }
+
+  img{
+    opacity:0.5
   }
 
   .leftBar {

@@ -19,13 +19,13 @@
 
 <div id="overlay" class="screen" v-bind:style="{ 'background-color':'rgba(255,255,255,'+overlayOpacity+')'}">
 
-    <div id="welcome" class="screen" v-if="showWelcome">
+    <div id="welcome" class="screen" v-if="shows['welcome']">
         <h1>Welcome!</h1>
         <button id ="openJoin" v-on:click="openMenu('join')">join room</button>
         <button id ="createRoom" v-on:click="openMenu('create')">new room</button>
     </div>
 
-    <div id="homeMenu" class="screen" v-if="showMenu">
+    <div id="homeMenu" class="screen" v-if="shows['menu']">
         <form @submit="joinRoom">
             <input class="roomInput" v-model="roomName" id="roomInput" type="text" maxlength="14"/>
             <!-- <button v-on:click="joinRoom">{{mode}}</button> -->
@@ -34,9 +34,11 @@
 
     </div>
 
-    <div id="lobby" class="screen" v-if="showLobby">
+    <div id="lobby" class="screen" v-if="shows['lobby']">
         <div id="gameSetup" class="leftBar"></div>
         <button>Start Game</button>
+        <button id ="colorButt" v-on:click="changeColor">new color</button>
+        <p id="fps"></p>
         <!-- <div id="footer"></div> -->
     </div>
 
@@ -48,11 +50,13 @@
 
 
 <div id="main">
-    <img id="streamImg">
+    <img id="streamImg" style="display:none">
     <canvas id = "streamCanvas"></canvas>
     <canvas id = "diffCanvas"></canvas>
     <canvas id = "offscreenCanvas"></canvas>
+    <canvas id = "miniCanvas"></canvas>
     <canvas id = "drawCanvas"></canvas>
+    <canvas id = "gridCanvas"></canvas>
     <div id="vidContainer" style="display:none">
     <video id="myVid" autoplay playsinline style="display:none"></video>
 </div>
@@ -88,16 +92,15 @@
 <script src="https://bundle.run/pixelmatch@5.0.1"></script>
 <script src="/js/ui-helper.js"></script>
 <script src="/js/scan.js"></script>
+<script src="/js/game.js"></script>
 
 <!-- socket stuff -->
 <script>
     if (location.hash) {
         socket.emit('room-hash', location.hash);
-        console.log("hey")
         //document.getElementById("room-display").innerHTML = "Current Room: "+location.hash;
     };
     socket.on('record', (ms) => {
-        console.log("what");
         //recording for 3000 ms.
         userMessage.innerText = "Matching...";
         recording = true;
@@ -106,9 +109,13 @@
     });
 
 $(function () {
-    socket.on('seg-stream', (data) => {
-        $('#streamImg').attr('src',data);
+    socket.on('seg-stream', (url) => {
+        $('#streamImg').attr('src',url);
     });
+
+    streamImg.onload = function() {
+    project(streamImg, streamCanvas);
+}
 // compare the two images
 //     function foo() {
 //     socket.emit('run-match', drawCanvas.toDataURL('image/webp'));
@@ -122,7 +129,7 @@ document.getElementById("overlay").style.opacity = 1;
 
 if (!location.hash) {
     setTimeout(function() { 
-        v.showWelcome = true;
+        v.shows['welcome'] = true;
     },100);
 };
 
