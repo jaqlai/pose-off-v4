@@ -28,7 +28,7 @@ io.on('connection', (socket) => {
     //io.emit('chat message', "joined room: "+room);
     //console.log('connected');
     socket.on('add-user', (username) => {
-      socket.to(room).emit('new-user',username);
+      socket.to(room).emit('add-user',username);
     });
     
     // if there's a room hash in the url, it joins that room
@@ -40,8 +40,6 @@ io.on('connection', (socket) => {
         // const numClients = Object.keys(clients).length;
         // if (numClients == 1)
         socket.emit('joined-room');
-        console.log(socket.ready);
-        console.log(socket.posed);
         // socket.to(room).emit('seg-stream',data);
         // console.log(Object.keys(io.sockets.adapter.sids[socket.id]));
 
@@ -67,15 +65,23 @@ io.on('connection', (socket) => {
   });
 
     socket.on('disconnect', () => {
-        //console.log('disconnected');
+      io.in(room).emit('user-disconnected');
+        console.log('disconnected');
       });
+    socket.on('roll-call', (usernames) => {
+      socket.to(room).emit('roll-call', usernames);
+    });
     
     socket.on('start-game', () => {
       io.in(room).emit('start-game');
     });
 
     socket.on('posing', (v, s) => {
-      socket.to(rooom).emit('start-round', {video:v, time:s});
+      socket.to(room).emit('start-round', {video:v, time:s});
+    });
+
+    socket.on('usernames', (usernames) => {
+      socket.to(room).emit('usernames', usernames);
     });
     // socket.on('run-match', () => {
     //   // const room = Object.keys(io.sockets.adapter.sids[socket.id])[1];

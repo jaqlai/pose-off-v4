@@ -26,19 +26,30 @@
     </div>
 
     <div id="homeMenu" class="screen" v-if="shows['menu']">
-        <form @submit="joinRoom">
-            <input class="roomInput" v-model="roomName" id="roomInput" type="text" maxlength="14"/>
-            <!-- <button v-on:click="joinRoom">{{mode}}</button> -->
+        <form @submit="joinRoom" v-if="shows['roomInput']" onsubmit="return false">
+            <input class="roomInput" v-model="roomName" placeholder="Room Name:" id="roomInput" type="text" maxlength="20"/>
             <input type="submit" value="Go"></input>
         </form>
-
     </div>
 
     <div id="lobby" class="screen" v-if="shows['lobby']">
+        <div class="screen" v-if="shows['usernameInput']">
+            <form @submit="addUser">
+                <input class="roomInput" v-model="username" placeholder="What's your name?" id="roomInput" type="text" maxlength="14"/>
+                <input type="submit" value="Go"></input>
+            </form>
+        </div>
         <div id="gameSetup" class="leftBar"></div>
+        <div class="screen">
         <button>Start Game</button>
         <button id ="colorButt" v-on:click="changeColor">new color</button>
+        <ul>
+            <li v-for="item in usernames" :key="item">
+              {{ item }}
+            </li>
+          </ul>
         <p id="fps"></p>
+    </div>
         <!-- <div id="footer"></div> -->
     </div>
 

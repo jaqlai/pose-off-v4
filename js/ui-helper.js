@@ -1,5 +1,6 @@
 var socket = io();
 let live=false;
+let myIndex;
 
 var colors = [{r: 0, g: 255, b: 0, a: 100}, {r: 255, g: 0, b: 0, a: 100}, {r: 0, g: 0, b: 255, a: 100}];
 const vw = Math.max(document.documentElement.clientWidth, window.innerWidth || 0);
@@ -79,9 +80,14 @@ var v = new Vue({
         shows:{
             welcome:false,
             menu:false,
-            lobby:false
+            lobby:false,
+            roomInput:false,
+            usernameInput:false
         },
         roomName:"",
+        isHost:false,
+        username:"",
+        usernames:[],
         overlayOpacity:1.0,
         gameOptions: {
             rounds:[3,2,1]
@@ -96,8 +102,16 @@ var v = new Vue({
 
       openMenu: (mode) => {
         v.shows['welcome'] = false;
+        v.shows['roomInput']=true;
         v.shows['menu'] = true;
         v.mode = mode;
+      },
+      addUser: () => {
+        v.shows['usernameInput']=false;
+        socket.emit('add-user',v.username);
+        v.overlayOpacity=0.15;
+        myIndex = Object.keys(v.usernames).length
+        v.usernames[myIndex] = 8;
       },
       joinRoom: () => {
         location.hash = v.roomName;
@@ -109,7 +123,8 @@ var v = new Vue({
 
 socket.on('joined-room', () => {
     v.roomName = location.hash;
-    v.overlayOpacity=0;
+    v.overlayOpacity=0.15;
+    v.shows['usernameInput'] = true;
     v.shows['lobby']=true;
     live = true;
 });
