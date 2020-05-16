@@ -13,7 +13,12 @@ let recording = false;
 let totalScore = 0;
 let aspect;
 const pixelCellWidth = 14.0;
-// let colorScheme = colorSchemes['rainbow'];
+var videoStream = drawCanvas.captureStream();
+var mediaRecorder = new MediaRecorder(videoStream);
+var chunks = [];
+let recordingPose = false;
+var videoURL;
+
 
 // check if metadata is ready - we need the sourceVideo size
 sourceVideo.onloadedmetadata = () => {
@@ -345,7 +350,6 @@ function project(source, canvas) {
     // ctx.scale(2, 2);
     ctx.scale(-1, 1);
     ctx.translate(-canvas.width, 0);
-    ctx.globalAlpha = 0.8;
 
     ctx.drawImage(
         source, 0, 0, source.width, source.height, 0,
@@ -356,9 +360,6 @@ function project(source, canvas) {
 
 function drawPixelMask(maskImage) {
     //somehow this width/height stuff clears the canvas.
-
-
-    
     offCtx.putImageData(maskImage,0,0);
 
     miniCanvas.width = drawCanvas.width * (1.0 / pixelCellWidth);
@@ -370,61 +371,6 @@ function drawPixelMask(maskImage) {
     project(miniCanvas, drawCanvas)
 }
 
-// function drawPixelMask(maskImage) {
-//     //somehow this width/height stuff clears the canvas.
-//     drawCanvas.width = drawCanvas.width;
-//     drawCanvas.height = drawCanvas.height;
-//     const pixelCellWidth = 14.0;
-
-//     drawCtx.save();
-//     // drawCtx.scale(2, 2);
-//     drawCtx.scale(-1, 1);
-//     drawCtx.translate(-drawCanvas.width, 0);
-//     drawCtx.globalAlpha = 0.8;
-
-    
-//     offCtx.putImageData(maskImage,0,0);
-
-//     miniCanvas.width = drawCanvas.width * (1.0 / pixelCellWidth);
-//     miniCanvas.height = drawCanvas.height * (1.0 / pixelCellWidth);
-//     miniCtx.drawImage(
-//     offscreenCanvas, 0, 0, offscreenCanvas.width, offscreenCanvas.height, 0, 0,
-//     miniCanvas.width, miniCanvas.height);
-
-//     drawCtx.imageSmoothingEnabled = false;
-
-//     drawCtx.drawImage(
-//         miniCanvas, 0, 0, miniCanvas.width, miniCanvas.height, 0,
-//         0, drawCanvas.width, drawCanvas.height);
-
-//     // drawCtx.drawImage(gridCanvas, 0,0);
-
-//     for (let i = 0; i < drawCanvas.width; i++) {
-//         drawCtx.beginPath();
-//         drawCtx.strokeStyle = '#ffffff';
-//         drawCtx.moveTo(pixelCellWidth * i, 0);
-//         drawCtx.lineTo(pixelCellWidth * i, drawCanvas.height);
-//         drawCtx.stroke();
-//       }
-    
-//       // Draws horizontal grid lines that are `pixelCellWidth` apart from each
-//       // other.
-//       for (let i = 0; i < drawCanvas.height; i++) {
-//         drawCtx.beginPath();
-//         drawCtx.strokeStyle = '#ffffff';
-//         drawCtx.moveTo(0, pixelCellWidth * i);
-//         drawCtx.lineTo(drawCanvas.width, pixelCellWidth * i);
-//         drawCtx.stroke();
-//       }
-
-//     drawCtx.restore();
-
-// }
-
-function usrMsg(msg) {
-    document.getElementById("overlay").style.opacity = 0.8;
-}
-
 // function broadcast(live) {
 //     if (live) {
 //         socket.emit('seg-stream', miniCanvas.toDataURL('image/webp', 0.1));
@@ -433,3 +379,15 @@ function usrMsg(msg) {
 // }
 
 // broadcast(live);
+
+    mediaRecorder.ondataavailable = function(e) {
+      chunks.push(e.data);
+    };
+
+mediaRecorder.onstop = function(e) {
+    var blob = new Blob(chunks, { 'type' : 'video/webm' });
+    chunks = [];
+    videoURL = URL.createObjectURL(blob);
+    videoStore.src = videoURL;
+ };
+

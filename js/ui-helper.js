@@ -7,7 +7,9 @@ const vw = Math.max(document.documentElement.clientWidth, window.innerWidth || 0
 const vh = Math.max(document.documentElement.clientHeight, window.innerHeight || 0);
 
 // element selectors
-const sourceVideo = document.querySelector('video');
+const sourceVideo = document.querySelector('#webcamVideo');
+const videoStore = document.querySelector("#videoStore");
+
 const drawCanvas = document.querySelector('#drawCanvas');
 const offscreenCanvas = document.querySelector('#offscreenCanvas');
 const miniCanvas = document.querySelector('#miniCanvas')
@@ -84,6 +86,9 @@ var v = new Vue({
             roomInput:false,
             usernameInput:false
         },
+        opacities:{
+            drawCanvas:0.8
+        },
         roomName:"",
         isHost:false,
         username:"",
@@ -106,18 +111,28 @@ var v = new Vue({
         v.shows['menu'] = true;
         v.mode = mode;
       },
-      addUser: () => {
+      addMe: () => {
         v.shows['usernameInput']=false;
         socket.emit('add-user',v.username);
         v.overlayOpacity=0.15;
         myIndex = Object.keys(v.usernames).length
-        v.usernames[myIndex] = 8;
+        if (myIndex == 0) {
+            v.usernames[myIndex] = 8;
+        }
+      },
+      pushUser: (user) => {
+          v.usernames.push(user);
       },
       joinRoom: () => {
         location.hash = v.roomName;
         socket.emit('room-hash', location.hash);
         v.shows['menu']=false;
       },
+      startGame: () => {
+        //   need to change later, for now it bypasses stuff
+        thisPosing(v.gameOptions['rounds'][0]);
+        v.shows['lobby'] = false;
+      }
     }
 });
 

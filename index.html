@@ -34,14 +34,14 @@
 
     <div id="lobby" class="screen" v-if="shows['lobby']">
         <div class="screen" v-if="shows['usernameInput']">
-            <form @submit="addUser">
+            <form @submit="addMe">
                 <input class="roomInput" v-model="username" placeholder="What's your name?" id="roomInput" type="text" maxlength="14"/>
                 <input type="submit" value="Go"></input>
             </form>
         </div>
         <div id="gameSetup" class="leftBar"></div>
         <div class="screen">
-        <button>Start Game</button>
+        <button v-on:click="startGame">Start Game</button>
         <button id ="colorButt" v-on:click="changeColor">new color</button>
         <ul>
             <li v-for="item in usernames" :key="item">
@@ -66,11 +66,16 @@
     <canvas id = "diffCanvas"></canvas>
     <canvas id = "offscreenCanvas"></canvas>
     <canvas id = "miniCanvas"></canvas>
-    <canvas id = "drawCanvas"></canvas>
+    <div class="screen" id="drawDiv" v-bind:style="{opacity:opacities['drawCanvas']}">   
+        <canvas id = "drawCanvas"></canvas>
+    </div>
     <canvas id = "gridCanvas"></canvas>
     <div id="vidContainer" style="display:none">
-    <video id="myVid" autoplay playsinline style="display:none"></video>
+    <video id="webcamVideo" autoplay playsinline style="display:none"></video>
+
 </div>
+<video id="videoStore" style="display:block" style="display:none"></video>
+
 
 </div>
 <div id="dashboard">
