@@ -84,7 +84,7 @@ var v = new Vue({
             menu:false,
             lobby:false,
             roomInput:false,
-            usernameInput:false
+            usernameInput:false,
         },
         opacities:{
             drawCanvas:0.8
@@ -141,7 +141,7 @@ socket.on('joined-room', () => {
     v.overlayOpacity=0.15;
     v.shows['usernameInput'] = true;
     v.shows['lobby']=true;
-    live = true;
+    // live = true;
 });
 
 const colorSchemes = [

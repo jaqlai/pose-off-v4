@@ -39,7 +39,9 @@
                 <input type="submit" value="Go"></input>
             </form>
         </div>
-        <div id="gameSetup" class="leftBar"></div>
+        <div id="gameSetup" class="leftBar">
+
+        </div>
         <div class="screen">
         <button v-on:click="startGame">Start Game</button>
         <button id ="colorButt" v-on:click="changeColor">new color</button>
@@ -70,11 +72,9 @@
         <canvas id = "drawCanvas"></canvas>
     </div>
     <canvas id = "gridCanvas"></canvas>
-    <div id="vidContainer" style="display:none">
     <video id="webcamVideo" autoplay playsinline style="display:none"></video>
-
-</div>
 <video id="videoStore" style="display:block" style="display:none"></video>
+
 
 
 </div>

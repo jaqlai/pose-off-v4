@@ -1,4 +1,5 @@
 let rosters = [];
+poseRecieved = false;
 
 socket.on('add-user', (username) => {
     // (v.usernames).push(username);
@@ -25,7 +26,7 @@ socket.on('roll-call', attendance => {
     checkRoster();
 });
 function checkRoster() {
-    if ((rosters.length) == (v.usernames.length-2)) {
+    if ((rosters.length) === (v.usernames.length-2)) {
         let tmpUsrs = [...v.usernames];
         tmpUsrs.splice(tmpUsrs.indexOf(8),1);
         rosters.forEach((roster)=>{
@@ -45,39 +46,62 @@ function outputUsernames(usrs){
 }
 
 socket.on('start-game', () => {
-    for (r = 0; r < v.gameOptions['rounds'].length; r++) {
-        const poseLength = v.gameOptions['rounds'][r];
-        const usernamesTemp = {...v.usernames};
-        for (u = 0; u < Object.keys(v.usernames).length; u++) {
-            if (v.usernames[u] == 8) {
-                // set pose
-                thisPosing(poseLength);
-            }
-            else{
-                // match pose
-            }
-        }
-    }
-    // end game
+    game();
+});
+
+// async function game() {
+//     for (r = 0; r < v.gameOptions['rounds'].length; r++) {
+//         const poseLength = v.gameOptions['rounds'][r];
+//         const usernamesTemp = {...v.usernames};
+//         for (u = 0; u < Object.keys(v.usernames).length; u++) {
+//             if (v.usernames[u] === 8) {
+//                 // set pose
+//                 thisPosing(poseLength);
+//                 socket.emit('pose-captured', videoURL);
+//             }
+//             else{
+//                 await (poseRecieved === true);
+//                 // match pose
+//             }
+//         }
+//     }
+//     // end game
+// }
+socket.on('pose-captured', (poseUrl) => {
+    console.log("GOTIT")
+    console.log(poseUrl)
+    poseRecieved = true;
+    // do a whole thing
+    videoStore.src = poseUrl;
+    poseRecieved = false;
 });
 
 function thisPosing(poseLength) {
+    console.log("STARTING! time:"+poseLength)
     mediaRecorder.start();
     recordingPose = true;
     setTimeout(function() { 
         stopRecording();
     },(poseLength*1000));
-    
+    socket.emit('pose-captured', videoURL);    
 };
 
-function stopRecording(){
-    recordingPose = false;
-    mediaRecorder.stop();
+mediaRecorder.onstop = function(e) {
+    var blob = new Blob(chunks, { 'type' : 'video/webm' });
+    chunks = [];
+    videoStore.src = URL.createObjectURL(blob);
     drawCanvas.style.display = "none";
     videoStore.style.display = "block";
 // some kind of info screen
-        videoStore.play();
+    videoStore.play();
+ };
+
+ function stopRecording(){
+    recordingPose = false;
+    mediaRecorder.stop();
+    console.log("stopped")
 }
+
 
 videoStore.onended = function() {
     videoStore.style.display = "none";

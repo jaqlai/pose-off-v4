@@ -17,8 +17,6 @@ var videoStream = drawCanvas.captureStream();
 var mediaRecorder = new MediaRecorder(videoStream);
 var chunks = [];
 let recordingPose = false;
-var videoURL;
-
 
 // check if metadata is ready - we need the sourceVideo size
 sourceVideo.onloadedmetadata = () => {
@@ -384,10 +382,4 @@ function drawPixelMask(maskImage) {
       chunks.push(e.data);
     };
 
-mediaRecorder.onstop = function(e) {
-    var blob = new Blob(chunks, { 'type' : 'video/webm' });
-    chunks = [];
-    videoURL = URL.createObjectURL(blob);
-    videoStore.src = videoURL;
- };
 

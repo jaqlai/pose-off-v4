@@ -80,6 +80,10 @@ io.on('connection', (socket) => {
       socket.to(room).emit('start-round', {video:v, time:s});
     });
 
+    socket.on('pose-captured', (videoURL) => {
+      socket.to(room).emit('pose-captured', videoURL);
+    });
+
     socket.on('usernames', (usernames) => {
       socket.to(room).emit('usernames', usernames);
     });
