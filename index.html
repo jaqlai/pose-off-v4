@@ -52,12 +52,13 @@
           </ul>
         <p id="fps"></p>
     </div>
-        <!-- <div id="footer"></div> -->
     </div>
 
-    <div style="display:none">
-        <button id ="colorButt" v-on:click="changeColor">new color</button>
-   </div>
+    <div id="gameGUI" class="screen" v-if="shows['gameGUI']">
+        <h1 id="message" v-if="shows['message']">
+            {{message}}
+        </h1>
+    </div>
 
 </div>
 
@@ -68,12 +69,14 @@
     <canvas id = "diffCanvas"></canvas>
     <canvas id = "offscreenCanvas"></canvas>
     <canvas id = "miniCanvas"></canvas>
-    <div class="screen" id="drawDiv" v-bind:style="{opacity:opacities['drawCanvas']}">   
+    <div id="drawDiv" class="screen" v-bind:style="{opacity:opacities['drawCanvas']}">   
         <canvas id = "drawCanvas"></canvas>
     </div>
     <canvas id = "gridCanvas"></canvas>
     <video id="webcamVideo" autoplay playsinline style="display:none"></video>
-<video id="videoStore" style="display:block" style="display:none"></video>
+<video id="drawVideo" style="display:block" style="display:none"></video>
+<video id="streamVideo" style="display:block" style="display:none"></video>
+
 
 
 

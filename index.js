@@ -66,8 +66,7 @@ io.on('connection', (socket) => {
 
     socket.on('disconnect', () => {
       io.in(room).emit('user-disconnected');
-        console.log('disconnected');
-      });
+    });
     socket.on('roll-call', (usernames) => {
       socket.to(room).emit('roll-call', usernames);
     });

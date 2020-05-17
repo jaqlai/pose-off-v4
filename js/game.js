@@ -1,5 +1,6 @@
 let rosters = [];
-poseRecieved = false;
+let sendPose = false;
+let duration = 3;
 
 socket.on('add-user', (username) => {
     // (v.usernames).push(username);
@@ -67,43 +68,60 @@ socket.on('start-game', () => {
 //     }
 //     // end game
 // }
-socket.on('pose-captured', (poseUrl) => {
-    console.log("GOTIT")
-    console.log(poseUrl)
-    poseRecieved = true;
-    // do a whole thing
-    videoStore.src = poseUrl;
-    poseRecieved = false;
-});
 
-function thisPosing(poseLength) {
-    console.log("STARTING! time:"+poseLength)
+function thisMatching() {
+    userMessage("start copying!", 500);
     mediaRecorder.start();
-    recordingPose = true;
     setTimeout(function() { 
-        stopRecording();
-    },(poseLength*1000));
-    socket.emit('pose-captured', videoURL);    
-};
-
-mediaRecorder.onstop = function(e) {
-    var blob = new Blob(chunks, { 'type' : 'video/webm' });
-    chunks = [];
-    videoStore.src = URL.createObjectURL(blob);
-    drawCanvas.style.display = "none";
-    videoStore.style.display = "block";
-// some kind of info screen
-    videoStore.play();
- };
-
- function stopRecording(){
-    recordingPose = false;
-    mediaRecorder.stop();
-    console.log("stopped")
+        userMessage("cool stuff!", 500);
+        mediaRecorder.stop();
+    },duration*1000);
 }
 
+socket.on('pose-captured', (chunks) => {
+    var blob = new Blob(chunks, { 'type' : 'video/webm' });
+    streamVideo.src = URL.createObjectURL(blob);
+    // do a whole thing
+    playVid(streamVideo);
+    setTimeout(()=> { 
+        thisMatching();
+    },duration*2000);
+});
 
-videoStore.onended = function() {
-    videoStore.style.display = "none";
+mediaRecorder.onstop = function() {
+    var blob = new Blob(chunks, { 'type' : 'video/webm' });
+    drawVideo.src = URL.createObjectURL(blob);
+    playVid(drawVideo);
+    if (sendPose) {
+    socket.emit('pose-captured', chunks); 
+    }
+    sendPose = false;
+    chunks = [];  
+};
+
+function thisPosing(poseLength) {
+    sendPose = true;
+    userMessage("start posing!", 500);
+    mediaRecorder.start();
+    setTimeout(function() { 
+        userMessage("nice stuff!", 500);
+        mediaRecorder.stop();
+    },(poseLength*1000));
+};
+
+
+
+drawVideo.onended = () => {
+    duration = streamVideo.currentTime;
+    console.log("DURATION"+duration)
+    drawVideo.style.display = "none";
     drawCanvas.style.display = "block";
 };
+
+streamVideo.onended = () => {
+    duration = streamVideo.currentTime;
+    console.log("DURATION"+duration)
+    drawVideo.style.display = "none";
+    drawCanvas.style.display = "block";
+};
+

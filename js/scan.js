@@ -16,11 +16,10 @@ const pixelCellWidth = 14.0;
 var videoStream = drawCanvas.captureStream();
 var mediaRecorder = new MediaRecorder(videoStream);
 var chunks = [];
-let recordingPose = false;
 
 // check if metadata is ready - we need the sourceVideo size
 sourceVideo.onloadedmetadata = () => {
-    console.log("video metadata ready");
+    // console.log("video metadata ready");
     gotMetadata = true;
     if (isPlaying)
         load()
@@ -28,7 +27,7 @@ sourceVideo.onloadedmetadata = () => {
 
 // Check if the sourceVideo has started playing
 sourceVideo.onplaying = () => {
-    console.log("video playing");
+    // console.log("video playing");
     isPlaying = true;
     if (gotMetadata) {
         load()
@@ -38,8 +37,8 @@ sourceVideo.onplaying = () => {
 function load(multiplier=0.75, stride=8) {
     sourceVideo.width = sourceVideo.videoWidth;
     sourceVideo.height = sourceVideo.videoHeight;
-    console.log("video width: "+sourceVideo.videoWidth);
-    console.log("video height: "+sourceVideo.videoHeight);
+    // console.log("video width: "+sourceVideo.videoWidth);
+    // console.log("video height: "+sourceVideo.videoHeight);
 
     // Canvas results for displaying masks
     offscreenCanvas.width = sourceVideo.videoWidth;
@@ -47,20 +46,12 @@ function load(multiplier=0.75, stride=8) {
     aspect = sourceVideo.videoWidth/sourceVideo.videoHeight;
 
 
-    // drawCanvas.width = vw;
-    // drawCanvas.height = drawCanvas.width/aspect;
-    drawCanvas.height = vh;
-    drawCanvas.width = drawCanvas.height*aspect;
-
-    streamCanvas.height = vh;
-    streamCanvas.width = streamCanvas.height*aspect;
-
-    makeGrid(pixelCellWidth);
-
+    fitCanvasesToScreen();
+    window.onresize = fitCanvasesToScreen();
 
     userMessage.innerText = "Loading model...";
 
-    console.log(`loading BodyPix with multiplier ${multiplier} and stride ${stride}`);
+    // console.log(`loading BodyPix with multiplier ${multiplier} and stride ${stride}`);
 
     bodyPix.load({multiplier: multiplier, stride: stride, quantBytes: 4})
         .then(net => loop(net))
@@ -199,41 +190,41 @@ function arrayToMatrix(arr, rowLength) {
     return newArray;
 }
 
-function matchPix() {
-    const w = drawCanvas.width;
-    const h = drawCanvas.height;
+// function matchPix() {
+//     const w = drawCanvas.width;
+//     const h = drawCanvas.height;
 
-    // not sure why this is neccessary?? But it seems like it is.
-    streamCanvas.width = w;
-    streamCanvas.height = h;
+//     // not sure why this is neccessary?? But it seems like it is.
+//     streamCanvas.width = w;
+//     streamCanvas.height = h;
     
-    const myImg = drawCtx.getImageData(0, 0, w, h);
+//     const myImg = drawCtx.getImageData(0, 0, w, h);
 
-    let streamImg = document.getElementById('streamImg');
-    streamCtx.drawImage(streamImg, 0, 0);
-    const poseFrame = streamCtx.getImageData(0, 0, w, h);
+//     let streamImg = document.getElementById('streamImg');
+//     streamCtx.drawImage(streamImg, 0, 0);
+//     const poseFrame = streamCtx.getImageData(0, 0, w, h);
     
-    const diffCanvas = document.querySelector('#diffCanvas');
-    const diffCtx = diffCanvas.getContext('2d');
-    const diff = diffCtx.createImageData(w, h);
+//     const diffCanvas = document.querySelector('#diffCanvas');
+//     const diffCtx = diffCanvas.getContext('2d');
+//     const diff = diffCtx.createImageData(w, h);
 
-    const thresh = 0.2;
-    dPix = pixelmatch(myImg.data, poseFrame.data, diff.data, w, h, {threshold: thresh});
-    diffCtx.putImageData(diff, 0, 0);
+//     const thresh = 0.2;
+//     dPix = pixelmatch(myImg.data, poseFrame.data, diff.data, w, h, {threshold: thresh});
+//     diffCtx.putImageData(diff, 0, 0);
 
-    // counts how many pixels are part of a person
-    const d = Uint8ClampedArray.from(poseFrame.data);
+//     // counts how many pixels are part of a person
+//     const d = Uint8ClampedArray.from(poseFrame.data);
     
-    //this actually takes a while maybe it could be async?
-    let c = 0;
-    for(let i = 3; i < d.length; i += 4) {
-        if (d[i]!=0) {
-            c++;
-        }
-    } 
+//     //this actually takes a while maybe it could be async?
+//     let c = 0;
+//     for(let i = 3; i < d.length; i += 4) {
+//         if (d[i]!=0) {
+//             c++;
+//         }
+//     } 
 
-    return 100*(1-((dPix/2)/c))
-}
+//     return 100*(1-((dPix/2)/c))
+// }
 
 // run a comparison of the two canvases
 // socket.on('match', () => {
@@ -377,9 +368,21 @@ function drawPixelMask(maskImage) {
 // }
 
 // broadcast(live);
+function playVid(video) {
+    drawCanvas.style.display = "none";
+    video.style.display = "block";
+// some kind of info screen
+    video.play();
+};
 
-    mediaRecorder.ondataavailable = function(e) {
-      chunks.push(e.data);
-    };
+mediaRecorder.ondataavailable = function(e) {
+    chunks.push(e.data);
+    // console.log("RECORDIN")
+};
+
+mediaRecorder.onstart = function() {
+    console.log("MEDIA RECORDER STARTED");
+}
+
 
 

@@ -8,7 +8,9 @@ const vh = Math.max(document.documentElement.clientHeight, window.innerHeight ||
 
 // element selectors
 const sourceVideo = document.querySelector('#webcamVideo');
-const videoStore = document.querySelector("#videoStore");
+const drawVideo = document.querySelector("#drawVideo");
+const streamVideo = document.querySelector("#streamVideo");
+
 
 const drawCanvas = document.querySelector('#drawCanvas');
 const offscreenCanvas = document.querySelector('#offscreenCanvas');
@@ -25,6 +27,17 @@ const offCtx = offscreenCanvas.getContext('2d');
 const miniCtx = miniCanvas.getContext('2d');
 const gridCtx = gridCanvas.getContext('2d');
 
+function fitCanvasesToScreen() {
+    // drawCanvas.width = vw;
+    // drawCanvas.height = drawCanvas.width/aspect;
+    drawCanvas.height = vh;
+    drawCanvas.width = drawCanvas.height*aspect;
+
+    streamCanvas.height = vh;
+    streamCanvas.width = streamCanvas.height*aspect;
+
+    makeGrid(pixelCellWidth);
+}
 
 
 // Model control buttons
@@ -37,7 +50,7 @@ const gridCtx = gridCanvas.getContext('2d');
 // Get video camera
 function handleSuccess(stream) {
     const video = document.querySelector('video');
-    console.log(`Using video device: ${stream.getVideoTracks()[0].label}`);
+    // console.log(`Using video device: ${stream.getVideoTracks()[0].label}`);
     video.srcObject = stream;
 }
 
@@ -85,10 +98,13 @@ var v = new Vue({
             lobby:false,
             roomInput:false,
             usernameInput:false,
+            message:false,
+            gameGUI:false
         },
         opacities:{
             drawCanvas:0.8
         },
+        message:"",
         roomName:"",
         isHost:false,
         username:"",
@@ -100,7 +116,6 @@ var v = new Vue({
     },
     methods: {
       changeColor: () => {
-          console.log(colorSchemes)
         colorSchemes.push(colorSchemes.shift());
         colorScheme = colorSchemes[0];
       },
@@ -132,6 +147,7 @@ var v = new Vue({
         //   need to change later, for now it bypasses stuff
         thisPosing(v.gameOptions['rounds'][0]);
         v.shows['lobby'] = false;
+        v.shows['gameGUI'] = true;
       }
     }
 });
@@ -143,6 +159,19 @@ socket.on('joined-room', () => {
     v.shows['lobby']=true;
     // live = true;
 });
+
+async function userMessage(message, time) {
+    v.shows['gameGUI'] = true;
+// showing the GUI is unneccessary but using now for debug
+    currentO = v.overlayOpacity;
+    v.overlayOpacity = 0.5;
+    v.message = message;
+    v.shows['message'] = true;
+    setTimeout(()=> {
+        v.shows['message'] = false;
+        v.overlayOpacity = currentO;
+    }, time)
+}
 
 const colorSchemes = [
 
