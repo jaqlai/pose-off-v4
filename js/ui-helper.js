@@ -32,13 +32,13 @@ const gridCtx = gridCanvas.getContext('2d');
 function fitCanvasesToScreen() {
     // drawCanvas.width = vw;
     // drawCanvas.height = drawCanvas.width/aspect;
+
     drawCanvas.height = vh;
     drawCanvas.width = drawCanvas.height*aspect;
 
     streamCanvas.height = vh;
     streamCanvas.width = streamCanvas.height*aspect;
 
-    makeGrid(pixelCellWidth);
 }
 
 

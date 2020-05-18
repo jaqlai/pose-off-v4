@@ -14,7 +14,7 @@ let totalScore = 0;
 let aspect;
 const pixelCellWidth = 14.0;
 var videoStream = drawCanvas.captureStream();
-var mediaRecorder = new MediaRecorder(videoStream);
+var mediaRecorder = new MediaRecorder(videoStream, 30);
 var chunks = [];
 
 // check if metadata is ready - we need the sourceVideo size
@@ -35,6 +35,8 @@ sourceVideo.onplaying = () => {
 };
 
 function load(multiplier=0.75, stride=8) {
+    // t0 = performance.now();
+
     sourceVideo.width = sourceVideo.videoWidth;
     sourceVideo.height = sourceVideo.videoHeight;
     // console.log("video width: "+sourceVideo.videoWidth);
@@ -52,19 +54,37 @@ function load(multiplier=0.75, stride=8) {
 
     // console.log(`loading BodyPix with multiplier ${multiplier} and stride ${stride}`);
 
+    v.overlayOpacity = 0.3;
+
+// takes abut 3 seconds to do
     bodyPix.load({multiplier: multiplier, stride: stride, quantBytes: 4})
         .then(net => loop(net))
         .catch(err => console.error(err));
-    v.overlayOpacity = 0.3;
+
+    // t1 = performance.now();
+    // console.log("time to load:"+(t1-t0));
+
+       
 }
 
 async function loop(net) {
     // let skipCount = 0;
-    skip = false;
+    let skip = false;
 
     stopLoop = false;
 
     enableDashboard(firstRun); // Show the dashboard
+
+    makeGrid(pixelCellWidth);
+    
+    // BodyPix setup
+    const segmentPersonConfig = {
+        flipHorizontal: flipHorizontal,     // Flip for webcam
+        maxDetections: 1,                   // only look at one person in this model
+        scoreThreshold: 0.6,
+        internalResolution: 'high',
+        segmentationThreshold: 0.5,         // default is 0.7
+    };
 
     while (isPlaying && !stopLoop) {
         // skipCount++;
@@ -79,19 +99,13 @@ async function loop(net) {
         skip = !skip;
         // var t0 = performance.now()
 
-        // BodyPix setup
-        const segmentPersonConfig = {
-            flipHorizontal: flipHorizontal,     // Flip for webcam
-            maxDetections: 1,                   // only look at one person in this model
-            scoreThreshold: 0.6,
-            internalResolution: 'high',
-            segmentationThreshold: 0.5,         // default is 0.7
-        };
-
         // const segmentation = await net.segmentPerson(sourceVideo, segmentPersonConfig);
         const segmentation = await net.segmentPersonParts(sourceVideo, segmentPersonConfig);
 
-        draw(segmentation);
+        // draw(segmentation);
+
+        const coloredImage = await bodyPix.toColoredPartMask(segmentation, colorScheme)
+        drawPixelMask(coloredImage);
 
 
         if(recording) {
@@ -113,13 +127,8 @@ async function loop(net) {
 
 // Use the bodyPix draw API's
 function draw(segData) {
-
-    // const myColor = {r: 0, g: 255, b: 0, a: 100};
-    const myColor = colors[0];
-    
     // const coloredImage = toMask(segData, myColor);
     coloredImage = bodyPix.toColoredPartMask(segData, colorScheme)
-
     // drawMask(coloredImage);
     drawPixelMask(coloredImage);
 
@@ -262,24 +271,24 @@ function makeGrid(pixelCellWidth) {
     gridCanvas.width = drawCanvas.width;
     gridCanvas.height = drawCanvas.height;
     gridCtx.globalAlpha = 0.8;
-      // Draws vertical grid lines that are `pixelCellWidth` apart from each other.
-      for (let i = 0; i < drawCanvas.width; i++) {
-        gridCtx.beginPath();
-        gridCtx.strokeStyle = '#ffffff';
-        gridCtx.moveTo(pixelCellWidth * i, 0);
-        gridCtx.lineTo(pixelCellWidth * i, drawCanvas.height);
-        gridCtx.stroke();
-      }
-    
-      // Draws horizontal grid lines that are `pixelCellWidth` apart from each
-      // other.
-      for (let i = 0; i < drawCanvas.height; i++) {
-        gridCtx.beginPath();
-        gridCtx.strokeStyle = '#ffffff';
-        gridCtx.moveTo(0, pixelCellWidth * i);
-        gridCtx.lineTo(drawCanvas.width, pixelCellWidth * i);
-        gridCtx.stroke();
-      }
+    // Draws vertical grid lines that are `pixelCellWidth` apart from each other.
+    for (let i = 0; i < drawCanvas.width; i++) {
+    gridCtx.beginPath();
+    gridCtx.strokeStyle = '#ffffff';
+    gridCtx.moveTo(pixelCellWidth * i, 0);
+    gridCtx.lineTo(pixelCellWidth * i, drawCanvas.height);
+    gridCtx.stroke();
+    }
+
+    // Draws horizontal grid lines that are `pixelCellWidth` apart from each
+    // other.
+    for (let i = 0; i < drawCanvas.height; i++) {
+    gridCtx.beginPath();
+    gridCtx.strokeStyle = '#ffffff';
+    gridCtx.moveTo(0, pixelCellWidth * i);
+    gridCtx.lineTo(drawCanvas.width, pixelCellWidth * i);
+    gridCtx.stroke();
+    }
 }
 
 function project(source, canvas) {
