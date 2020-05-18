@@ -1,3 +1,5 @@
+display = document.querySelector("#userMessage");
+
 var socket = io();
 let live=false;
 let myIndex;
@@ -146,6 +148,18 @@ var v = new Vue({
       startGame: () => {
         //   need to change later, for now it bypasses stuff
         thisPosing(v.gameOptions['rounds'][0]);
+        v.shows['lobby'] = false;
+        v.shows['gameGUI'] = true;
+      },
+      DEVFsendPose: () => {
+        //   need to change later, for now it bypasses stuff
+        thisPosing(v.gameOptions['rounds'][0]);
+        v.shows['lobby'] = false;
+        v.shows['gameGUI'] = true;
+      },
+      DEVFstartMatch: () => {
+        //   need to change later, for now it bypasses stuff
+        thisMatching(v.gameOptions['rounds'][0]);
         v.shows['lobby'] = false;
         v.shows['gameGUI'] = true;
       }

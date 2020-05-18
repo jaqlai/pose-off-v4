@@ -94,6 +94,10 @@ img {
     margin: auto;
   }
 
+  #userMessage {
+    z-index:3;
+  }
+
   img{
     opacity:0.5
   }

@@ -43,7 +43,9 @@
 
         </div>
         <div class="screen">
-        <button v-on:click="startGame">Start Game</button>
+        <!-- <button v-on:click="startGame">Start Game</button> -->
+        <button v-on:click="DEVFsendPose">Start Posing</button>
+        <button v-on:click="DEVFstartMatch">Start Match</button>
         <button id ="colorButt" v-on:click="changeColor">new color</button>
         <ul>
             <li v-for="item in usernames" :key="item">
@@ -82,7 +84,7 @@
 
 </div>
 <div id="dashboard">
-    <p>Status: <span id="userMessage">Webcam must be activated.</span></p>
+    <p><span id="userMessage">Webcam loading.</span></p>
     <div id="statsDiv" hidden>
         <p>FPS: <span id="fps"></span></p>
     </div>

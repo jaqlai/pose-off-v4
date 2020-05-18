@@ -70,6 +70,7 @@ socket.on('start-game', () => {
 // }
 
 function thisMatching() {
+
     userMessage("start copying!", 500);
     mediaRecorder.start();
     setTimeout(function() { 
@@ -100,6 +101,7 @@ mediaRecorder.onstop = function() {
 };
 
 function thisPosing(poseLength) {
+
     sendPose = true;
     userMessage("start posing!", 500);
     mediaRecorder.start();

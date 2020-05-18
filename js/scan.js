@@ -45,7 +45,6 @@ function load(multiplier=0.75, stride=8) {
     offscreenCanvas.height = sourceVideo.videoHeight;
     aspect = sourceVideo.videoWidth/sourceVideo.videoHeight;
 
-
     fitCanvasesToScreen();
     window.onresize = fitCanvasesToScreen();
 
@@ -88,16 +87,11 @@ async function loop(net) {
             internalResolution: 'high',
             segmentationThreshold: 0.5,         // default is 0.7
         };
-        // const segmentation = await net.segmentPerson(sourceVideo, segmentPersonConfig);
 
-        // use this code to segment by parts (also have to change coloredImage below)
+        // const segmentation = await net.segmentPerson(sourceVideo, segmentPersonConfig);
         const segmentation = await net.segmentPersonParts(sourceVideo, segmentPersonConfig);
 
-        // Draw the data to canvas
         draw(segmentation);
-
-        // var t1 = performance.now();
-        // console.log("getUrl: " + (t1 - t0) + "  ms.");
 
 
         if(recording) {
@@ -105,36 +99,16 @@ async function loop(net) {
             scores.push(m);
         }
 
-        // if(live && !skip) {
-        // // might have to have a png option for non-chrome?
-        //     socket.emit('seg-stream', drawCanvas.toDataURL('image/webp', 0.1));
-        // // drawCanvas.toBlob(function(blob) {
-        // //     var url = URL.createObjectURL(blob);
-        // //     socket.emit('seg-stream', url);
-
         if (live && !skip) {
                 socket.emit('seg-stream', miniCanvas.toDataURL('image/webp', 1));
         }
 
-        // // });
-        // }
-
         // skip if nothing is there
         if (segmentation.allPoses[0] === undefined) {
-            // console.info("No segmentation data");
             continue;
         }
-        // var t1 = performance.now();
-        // console.log("total: " + 1000/(t1 - t0) + "  fps.");
-
     }
-
-    // var t1 = performance.now();
-    // console.log("Call to doSomething took " + (t1 - t0) + " milliseconds.");
-    // console.log("yo");
-
 }
-
 
 
 // Use the bodyPix draw API's
@@ -144,10 +118,7 @@ function draw(segData) {
     const myColor = colors[0];
     
     // const coloredImage = toMask(segData, myColor);
-    coloredImage =bodyPix.toColoredPartMask(segData, colorScheme)
-    // bodyPix.drawPixelatedMask(
-    //     drawCanvas, offscreenCanvas, coloredImage, 0.5, 0,
-    //     true, 10.0);
+    coloredImage = bodyPix.toColoredPartMask(segData, colorScheme)
 
     // drawMask(coloredImage);
     drawPixelMask(coloredImage);
@@ -170,24 +141,6 @@ function drawKeypoints(keypoints, minConfidence, ctx, color = 'aqua') {
         ctx.fill();
 
     }
-}
-
-// Helper function to convert an array into a matrix for easier pixel proximity functions
-function arrayToMatrix(arr, rowLength) {
-    let newArray = [];
-
-    // Check
-    if (arr.length % rowLength > 0 || rowLength < 1) {
-        console.log("array not divisible by rowLength ", arr, rowLength);
-        return
-    }
-
-    let rows = arr.length / rowLength;
-    for (let x = 0; x < rows; x++) {
-        let b = arr.slice(x * rowLength, x * rowLength + rowLength);
-        newArray.push(b);
-    }
-    return newArray;
 }
 
 // function matchPix() {
@@ -376,11 +329,14 @@ function playVid(video) {
 };
 
 mediaRecorder.ondataavailable = function(e) {
+    display.innerText = "STOPPED";
     chunks.push(e.data);
     // console.log("RECORDIN")
 };
 
 mediaRecorder.onstart = function() {
+    display.innerText = "RECORDING";
+
     console.log("MEDIA RECORDER STARTED");
 }
 
