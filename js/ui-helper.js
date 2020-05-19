@@ -13,6 +13,8 @@ const sourceVideo = document.querySelector('#webcamVideo');
 const drawVideo = document.querySelector("#drawVideo");
 const streamVideo = document.querySelector("#streamVideo");
 
+const drawDiv = document.querySelector('#drawDiv');
+
 
 const drawCanvas = document.querySelector('#drawCanvas');
 const offscreenCanvas = document.querySelector('#offscreenCanvas');
@@ -101,7 +103,8 @@ var v = new Vue({
             roomInput:false,
             usernameInput:false,
             message:false,
-            gameGUI:false
+            gameGUI:false,
+            border:true
         },
         opacities:{
             drawCanvas:0.8
@@ -154,15 +157,21 @@ var v = new Vue({
       DEVFsendPose: () => {
         //   need to change later, for now it bypasses stuff
         thisPosing(v.gameOptions['rounds'][0]);
-        v.shows['lobby'] = false;
+        // v.shows['lobby'] = false;
         v.shows['gameGUI'] = true;
       },
       DEVFstartMatch: () => {
         //   need to change later, for now it bypasses stuff
-        thisMatching(v.gameOptions['rounds'][0]);
-        v.shows['lobby'] = false;
+        thisMatching();
+        // v.shows['lobby'] = false;
         v.shows['gameGUI'] = true;
-      }
+      },
+      showBorder: () => {
+          v.shows['border'] = true
+      },
+      hideBorder: () => {
+        v.shows['border'] = false
+    }
     }
 });
 
@@ -174,7 +183,7 @@ socket.on('joined-room', () => {
     // live = true;
 });
 
-async function userMessage(message, time) {
+function userMessage(message, time) {
     v.shows['gameGUI'] = true;
 // showing the GUI is unneccessary but using now for debug
     currentO = v.overlayOpacity;
@@ -259,6 +268,30 @@ function dictToArray(dict) {
 
 
 
-colorScheme = colorSchemes['rainbow'];
+colorScheme = colorSchemes[0];
 
 colorSchemes.push(dictToArray(myScheme));
+
+function getDuration(video) {
+    video.currentTime = 999;
+    let tmp = video.currentTime
+    video.currentTime = 0;
+    console.log("getDur: "+tmp)
+    return tmp
+}
+
+function borderClock(seconds) {
+    let dist = 2*(vw+vh);
+    top = document.querySelector("border-top");
+    left = document.querySelector("border-left");
+    right = document.querySelector("border-right");
+    bottom = document.querySelector("border-bottom");
+    sides = [top,right,bottom,left]
+    sides.forEach(()=>{
+        let lim = top.style.width;
+        for (let i = 0; i<lim; i++) {
+        
+        }
+    });
+
+}

@@ -13,8 +13,8 @@ let recording = false;
 let totalScore = 0;
 let aspect;
 const pixelCellWidth = 14.0;
-var videoStream = drawCanvas.captureStream();
-var mediaRecorder = new MediaRecorder(videoStream, 30);
+var videoStream = drawCanvas.captureStream(30);
+var mediaRecorder = new MediaRecorder(videoStream);
 var chunks = [];
 
 // check if metadata is ready - we need the sourceVideo size
@@ -104,7 +104,9 @@ async function loop(net) {
 
         // draw(segmentation);
 
-        const coloredImage = await bodyPix.toColoredPartMask(segmentation, colorScheme)
+        // const coloredImage = await bodyPix.toColoredPartMask(segmentation, colorScheme)
+        const coloredImage = await toColoredPartMask(segmentation, colorScheme)
+
         drawPixelMask(coloredImage);
 
 
@@ -220,52 +222,52 @@ function addScore(s) {
     totalScore += s;
 }
 
-function toMask(segData, clr = {
-    r: 0,
-    g: 255,
-    b: 0,
-    a: 100
-}, width = 640, height = 480, foregroundIds = [1]) {
-    if (Array.isArray(segData) &&
-        segData.length === 0) {
-        return null;
-    }
-    const bytes = new Uint8ClampedArray(width * height * 4);
-    for (let i = 0; i < height; i += 1) {
-        for (let j = 0; j < width; j += 1) {
-            const n = i * width + j;
-            bytes[4 * n + 0] = 0;
-            bytes[4 * n + 1] = 0;
-            bytes[4 * n + 2] = 0;
-            bytes[4 * n + 3] = 0;
-            if (foregroundIds.some(id => id === segData[n])) {
-                bytes[4 * n] = clr.r;
-                bytes[4 * n + 1] = clr.g;
-                bytes[4 * n + 2] = clr.b;
-                bytes[4 * n + 3] = clr.a;
-            }
-        }
-    }
-    return new ImageData(bytes, width, height);
-}
+// function toMask(segData, clr = {
+//     r: 0,
+//     g: 255,
+//     b: 0,
+//     a: 100
+// }, width = 640, height = 480, foregroundIds = [1]) {
+//     if (Array.isArray(segData) &&
+//         segData.length === 0) {
+//         return null;
+//     }
+//     const bytes = new Uint8ClampedArray(width * height * 4);
+//     for (let i = 0; i < height; i += 1) {
+//         for (let j = 0; j < width; j += 1) {
+//             const n = i * width + j;
+//             bytes[4 * n + 0] = 0;
+//             bytes[4 * n + 1] = 0;
+//             bytes[4 * n + 2] = 0;
+//             bytes[4 * n + 3] = 0;
+//             if (foregroundIds.some(id => id === segData[n])) {
+//                 bytes[4 * n] = clr.r;
+//                 bytes[4 * n + 1] = clr.g;
+//                 bytes[4 * n + 2] = clr.b;
+//                 bytes[4 * n + 3] = clr.a;
+//             }
+//         }
+//     }
+//     return new ImageData(bytes, width, height);
+// }
 
 
-function drawMask(maskImage) {
-    //somehow this width/height stuff clears the canvas.
-    drawCanvas.width = drawCanvas.width;
-    drawCanvas.height = drawCanvas.height;
+// function drawMask(maskImage) {
+//     //somehow this width/height stuff clears the canvas.
+//     drawCanvas.width = drawCanvas.width;
+//     drawCanvas.height = drawCanvas.height;
     
-    offCtx.putImageData(maskImage,0,0);
+//     offCtx.putImageData(maskImage,0,0);
     
-    drawCtx.save();
-    // drawCtx.scale(2, 2);
-    drawCtx.scale(-1, 1);
-    drawCtx.translate(-drawCanvas.width, 0);
-    drawCtx.drawImage(offscreenCanvas, 0, 0);
-    drawCtx.restore();
-    drawCtx.globalAlpha = 0.5;
+//     drawCtx.save();
+//     // drawCtx.scale(2, 2);
+//     drawCtx.scale(-1, 1);
+//     drawCtx.translate(-drawCanvas.width, 0);
+//     drawCtx.drawImage(offscreenCanvas, 0, 0);
+//     drawCtx.restore();
+//     drawCtx.globalAlpha = 0.5;
 
-}
+// }
 
 function makeGrid(pixelCellWidth) {
     gridCanvas.width = drawCanvas.width;
@@ -322,32 +324,47 @@ function drawPixelMask(maskImage) {
     project(miniCanvas, drawCanvas)
 }
 
-// function broadcast(live) {
-//     if (live) {
-//         socket.emit('seg-stream', miniCanvas.toDataURL('image/webp', 0.1));
-//         setTimeout(function () {broadcast(live)}, 33);
-//     }
-// }
 
-// broadcast(live);
-function playVid(video) {
-    drawCanvas.style.display = "none";
-    video.style.display = "block";
-// some kind of info screen
-    video.play();
-};
 
-mediaRecorder.ondataavailable = function(e) {
-    display.innerText = "STOPPED";
-    chunks.push(e.data);
-    // console.log("RECORDIN")
-};
-
-mediaRecorder.onstart = function() {
-    display.innerText = "RECORDING";
-
-    console.log("MEDIA RECORDER STARTED");
+function toColoredPartMask(partSegmentation, partColors) {
+    if (Array.isArray(partSegmentation) && partSegmentation.length === 0) {
+        return null;
+    }
+    let multiPersonPartSegmentation;
+    if (!Array.isArray(partSegmentation)) {
+        multiPersonPartSegmentation = [partSegmentation];
+    }
+    else {
+        multiPersonPartSegmentation = partSegmentation;
+    }
+    const { width, height } = multiPersonPartSegmentation[0];
+    const bytes = new Uint8ClampedArray(width * height * 4);
+    for (let i = 0; i < height * width; ++i) {
+        // invert mask.  Invert the segmentation mask.
+        const j = i * 4;
+        bytes[j + 0] = 0;
+        bytes[j + 1] = 0;
+        bytes[j + 2] = 0;
+        bytes[j + 3] = 0;
+        for (let k = 0; k < multiPersonPartSegmentation.length; k++) {
+            const partId = multiPersonPartSegmentation[k].data[i];
+            if (partId !== -1) {
+                const color = partColors[partId];
+                if (!color) {
+                    throw new Error(`No color could be found for part id ${partId}`);
+                }
+                bytes[j + 0] = color[0];
+                bytes[j + 1] = color[1];
+                bytes[j + 2] = color[2];
+                bytes[j + 3] = 255;
+            }
+        }
+    }
+    return new ImageData(bytes, width, height);
 }
 
+function sleep(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+  }
 
 

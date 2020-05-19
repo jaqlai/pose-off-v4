@@ -18,13 +18,17 @@
 
 
 <div id="overlay" class="screen" v-bind:style="{ 'background-color':'rgba(255,255,255,'+overlayOpacity+')'}">
-
+    <div id="border" v-if="shows['border']">
+        <div id="border-left"></div>
+        <div id="border-right"></div>
+        <div id="border-top"></div>
+        <div id="border-bottom"></div>
+    </div>
     <div id="welcome" class="screen" v-if="shows['welcome']">
         <h1>Welcome!</h1>
         <button id ="openJoin" v-on:click="openMenu('join')">join room</button>
         <button id ="createRoom" v-on:click="openMenu('create')">new room</button>
     </div>
-
     <div id="homeMenu" class="screen" v-if="shows['menu']">
         <form @submit="joinRoom" v-if="shows['roomInput']" onsubmit="return false">
             <input class="roomInput" v-model="roomName" placeholder="Room Name:" id="roomInput" type="text" maxlength="20"/>
@@ -47,6 +51,9 @@
         <button v-on:click="DEVFsendPose">Start Posing</button>
         <button v-on:click="DEVFstartMatch">Start Match</button>
         <button id ="colorButt" v-on:click="changeColor">new color</button>
+        <h1 id="message" v-if="shows['message']">
+            {{message}}
+        </h1>
         <ul>
             <li v-for="item in usernames" :key="item">
               {{ item }}
