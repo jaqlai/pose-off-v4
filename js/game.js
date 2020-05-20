@@ -1,6 +1,6 @@
 let rosters = [];
 let sendPose = false;
-let duration = v.gameOptions['rounds'][0];
+// let duration = v.gameOptions['rounds'][0];
 
 // socket.on('add-user', (username) => {
 //     // (v.usernames).push(username);
@@ -69,17 +69,50 @@ socket.on('start-game', () => {
 //     // end game
 // }
 
-function thisPosing(poseLength) {
+// function thisPosing(poseLength) {
+//     poseMs = (poseLength*1000);
+//     t0 = performance.now();
+//     sendPose = true;
+//     userMessage("start posing!", 1000);
+//     setTimeout(()=> { 
+//         t1 = performance.now();
+//         console.log("elapsed "+(t1-t0));
+//         mediaRecorder.start();
+//         setTimeout(()=> { 
+//             userMessage("sending your pose...", poseMs);
+//             mediaRecorder.stop();
+//             drawDiv.style.opacity = 0;
+//             playVid(drawVideo)
+//             // setTimeout(()=> {playVid(drawVideo)}, 800);
+//         },poseMs);
+//     },1000);
+    
+// };
 
+async function thisPosing(round) {
+    poseMs = (round['time']*1000);
+    console.log("poseMs: "+poseMs)
+    t0 = performance.now();
     sendPose = true;
-    userMessage("start posing!", 500);
+    userMessage("start posing!", 1000);
+    await sleep(1000);
+
+    
     mediaRecorder.start();
-    setTimeout(()=> { 
-        userMessage("nice stuff!", 500);
-        mediaRecorder.stop();
-        drawDiv.style.opacity = 0;
-        setTimeout(()=> {playVid(drawVideo)}, 800);
-    },(poseLength*1000));
+    let poses = round['poses'];
+    for (p=1;p<poses+1;p++) {
+        console.log("SET"+(p*(poseMs/p)-900))
+        setTimeout(()=>{timerbar(0.9)},(p*poseMs/poses)-900)
+    }
+
+    await sleep(poseMs+200);
+    t1 = performance.now();
+    console.log("elapsed "+(t1-t0));
+    userMessage("sending your pose...", poseMs);
+    mediaRecorder.stop();
+    drawDiv.style.opacity = 0;
+    playVid(drawVideo)
+    // setTimeout(()=> {playVid(drawVideo)}, 800);
     
 };
 
@@ -97,37 +130,60 @@ mediaRecorder.onstop = () => {
 };
 
 socket.on('pose-captured', (chunks) => {
+    streamVideo.style.opacity = 0.2;
     var blob = new Blob(chunks, { 'type' : 'video/webm' });
     streamVideo.src = URL.createObjectURL(blob);
-    thisMatching();
+// TEMPORARY
+    thisMatching(v.gameOptions['rounds'][2]);
+// TEMPORARY
+
 });
 
-function thisMatching() {
+async function thisMatching(round) {
+ 
+    let poses = round['poses'];
+    let stops = [];
+    let pauseFor = 500;
+    for (p=1;p<poses+1;p++) {
+        stops.push(p * (round['time']/poses))
+    }
 
-    userMessage("Recieved a pose! Video will play once, and then you'll match it!", 500);
-
+    let duration = 1000*round['time']+stops.length*pauseFor;
     drawDiv.style.opacity = 0;
-    sleep(800);
 
-    v.showBorder();
+    userMessage("Recieved a pose!", 1000);
+    await sleep(1000);
+    userMessage("Video will play once,", 1000);
+    await sleep(1000);
+    userMessage("and then you'll match the poses!", 1000);
+    await sleep(1000);
+    
+    setPauses(streamVideo, stops, pauseFor);
     playVid(streamVideo);
+    console.log("DURATION:"+duration)
+    await sleep(duration);
 
-    setTimeout( ()=> {
-        v.hideBorder();
-        userMessage("start copying!", 500);
-        drawDiv.style.opacity = 0.5;
-        sleep(800);
+    userMessage("ready?", 1000);
+    await sleep(1000);
+    userMessage("set...", 1000);
+    await sleep(1000);
 
-        mediaRecorder.start();
-        playVid(streamVideo);
+    userMessage("Start copying!", 1000);
+    await sleep(1000);
 
-        setTimeout(function() { 
-            mediaRecorder.stop();
-            drawVideo.style.display = "none";
-            userMessage("cool stuff!", 500);
-        },duration*1000);
+    drawDiv.style.opacity = 0.5;
+    // sleep(800);
 
-    }, duration*1000);
+    mediaRecorder.start();
+    playFrames(streamVideo, stops);
+
+    setTimeout(function() { 
+        mediaRecorder.stop();
+        drawVideo.style.display = "none";
+        userMessage("Awesome job!", 500);
+        drawDiv.style.opacity = 1;
+    },duration);
+
 }
 
 streamVideo.onplay = ()=> {
@@ -147,6 +203,66 @@ streamVideo.onended = () => {
     drawDiv.style.opacity = 1;
 };
 
+// function setEnd(video, func) {
+//     video.onended = () => {
+//         streamVideo.style.display = "none";
+//         drawDiv.style.opacity = 1;
+//         func();
+//         video.onended = () => {
+//             streamVideo.style.display = "none";
+//             drawDiv.style.opacity = 1;
+//         }
+//     };
+// }
+
+// // more versatile-- uses array format for stops that includes length of stop.
+// function setPause(video, stops) {
+//     stop = stops[0];
+//     let pauseAt = stop[0];
+//     let pauseFor = stop[1];
+//     video.ontimeupdate = () => {
+//         if(!video.paused && (video.currentTime >= pauseAt)){
+//             video.pause();
+//             console.log("paused at time "+pauseAt)
+//             setTimeout(()=>{
+//                 playVid(video);
+//                 if(stops.length > 1) {
+//                     stops.shift();
+//                     setPause(video, stops);
+//                 }
+//                 else{
+//                     video.ontimeupdate = {};
+//                 }
+//             }, pauseFor);
+//         }
+//     }
+// }
+
+function setPauses(video, argStops, pauseFor=500) {
+    let stops = [...argStops]
+    console.log("setting pauses at:  "+stops)
+    let pauseAt = stops[0];
+    video.ontimeupdate = () => {
+        if(!video.paused && (video.currentTime >= pauseAt)){
+            streamVideo.style.opacity = 1;
+            
+            video.pause();
+            console.log("paused at time "+pauseAt)
+            setTimeout(()=>{
+                streamVideo.style.opacity = 0.2;
+                playVid(video);
+                if(stops.length > 1) {
+                    stops.shift();
+                    setPauses(video, stops);
+                }
+                else{
+                    video.ontimeupdate = {};
+                }
+            }, pauseFor);
+        }
+    }
+}
+
 function playVid(video) {
     setTimeout(()=>{
         if (video.readyState >=3 ) {
@@ -155,10 +271,46 @@ function playVid(video) {
         else{
             playVid(video);
         }
-    },0)
+    },10)
 };
+
+function playFrames(video, frameArray) {
+    streamVideo.style.display = "block";
+    let frames = [...frameArray]
+    let pauseFor = 600;
+    video.currentTime = frames[0];
+    video.style.opacity = 0.2;
+    setTimeout(()=>{
+        video.style.opacity = 1;
+        setTimeout(()=>{
+            if(frames.length > 1) {
+                frames.shift();
+                playFrames(video, frames);
+            }
+            else{
+                streamVideo.style.display = "none";
+            }
+        },pauseFor);
+    },video.currentTime*1000)
+}
+
+// function pauseVid(video) {
+//     setTimeout(()=>{
+//         if (video.readyState >=3 ) {
+//             video.pause();
+//         }
+//         else{
+//             pauseVid(video);
+//         }
+//     },10)
+// };
 
 mediaRecorder.ondataavailable = function(e) {
     chunks.push(e.data);
+    maskBack = 0;
+};
+
+mediaRecorder.onstart = () => {
+    maskBack = 255;
 };
 
